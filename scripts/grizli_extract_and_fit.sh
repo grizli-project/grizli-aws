@@ -23,7 +23,8 @@ aws s3 cp s3://aws-grivam/Pipeline/${root}_footprint.fits ./
 
 grizli_extract_and_fit.py ${root} run
 
-mpiexec -n 16 python -m mpi4py.futures $GRIZLICODE/grizli/pipeline/run_MPI.py
+cpu_count=`python -c 'import multiprocessing; print(multiprocessing.cpu_count()//2)'`
+mpiexec -n $cpu_count python -m mpi4py.futures $GRIZLICODE/grizli/pipeline/run_MPI.py
 
 grizli_extract_and_fit.py ${root} summary
 

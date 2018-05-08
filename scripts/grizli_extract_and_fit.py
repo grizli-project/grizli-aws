@@ -9,10 +9,10 @@ def auto_extract(root='j023507-040202'):
     
     DITHERED_PLINE = {'kernel': 'point', 'pixfrac': 0.2, 'pixscale': 0.1, 'size': 8, 'wcs': None}
     
-    #auto_script.extract(field_root=root, maglim=[16.5,26], ids=None, run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=DITHERED_PLINE)
+    auto_script.extract(field_root=root, maglim=[16.5,26], ids=None, run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=DITHERED_PLINE)
     
     # Test
-    auto_script.extract(field_root=root, maglim=[16.5,26], ids=[403], run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=DITHERED_PLINE)
+    #auto_script.extract(field_root=root, maglim=[16.5,26], ids=[403], run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=DITHERED_PLINE)
     
 if __name__ == "__main__":
     import sys

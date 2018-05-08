@@ -33,11 +33,11 @@ if __name__ == "__main__":
 aws s3 sync s3://aws-grivam/Pipeline/{0}/Extractions/ ./
 aws s3 cp s3://aws-grivam/Pipeline/{0}_footprint.fits ./
 
-grizli_extract_and_fit {0} run
+grizli_extract_and_fit.py {0} run
 
 mpiexec -n 16 python -m mpi4py.futures $GRIZLICODE/grizli/pipeline/run_MPI.py
 
-grizli_extract_and_fit {0} summary
+grizli_extract_and_fit.py {0} summary
 
 aws s3 sync --exclude "*" --include "{0}_*fits" ./ s3://aws-grivam/Pipeline/{0}/Extractions/
 aws s3 sync --exclude "*" --include "{0}_*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/{0}/Extractions/

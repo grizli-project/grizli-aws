@@ -16,7 +16,7 @@ root=$1
 echo "Running on root=${root}"
 
 cd $HOME/GrizliExtract
-rm *GrismFL* *npy j[0-9]*
+rm *GrismFL* *npy j[0-9]* *wcs*
 
 aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./
 aws s3 cp s3://aws-grivam/Pipeline/${root}_footprint.fits ./

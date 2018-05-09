@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Syncs from working directory on EC2 instance to S3 buket
+
 if [ $# -eq 0 ]
   then
     echo "Usage:  $ grizli_extract_and_fit j023507-040202"

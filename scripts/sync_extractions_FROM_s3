@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+  then
+    echo "Usage:  $ sync_extractions_FROM j023507-040202"
+    
+    exit
+fi
+
+root=$1
+
+# Run in root directory, like /Volumes/Pegasus/Grizli/Automatic/
+
+aws s3 sync --exclude "*" --include "${root}/Extractions/*GrismFLT*"  \
+                          --include "${root}/Extractions/*npy" \
+                          --include "${root}/Extractions/*cat.fits" \
+                          --include "${root}/Extractions/${root}*" \
+                          --follow-symlinks  s3://aws-grivam/Pipeline/ ./
+

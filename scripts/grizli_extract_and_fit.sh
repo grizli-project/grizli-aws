@@ -28,7 +28,7 @@ grizli_extract_and_fit.py ${root} run
 
 # Sync extractions
 aws s3 sync --exclude "*" --include "${root}_*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
-aws s3 sync --exclude "*" --include "${root}_*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+aws s3 sync --exclude "*" --include "${root}*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 
 # Redshift fits
 cpu_count=`python -c 'import multiprocessing; print(multiprocessing.cpu_count()//2)'`

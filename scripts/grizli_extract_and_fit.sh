@@ -16,7 +16,7 @@ root=$1
 echo "Running on root=${root}"
 
 cd $HOME/GrizliExtract
-rm *GrismFL* *npy ${root}*
+rm *GrismFL* *npy j[0-9]*
 
 aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./
 aws s3 cp s3://aws-grivam/Pipeline/${root}_footprint.fits ./
@@ -30,4 +30,5 @@ grizli_extract_and_fit.py ${root} summary
 
 aws s3 sync --exclude "*" --include "${root}_*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 aws s3 sync --exclude "*" --include "${root}_*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+
 

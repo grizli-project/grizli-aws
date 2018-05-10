@@ -64,7 +64,11 @@ def make_summary_html(output_table='grizli_aws.html', verbose=True):
     tab['zhist'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png> <img width=400 src=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png></a>'.format(root.replace('+','%2B')) for root in roots]
     
     tab.write_sortable_html(output_table, localhost=False)
-    print(output_table)
+    print("""
+Done: {0}
+
+Sync to s3: aws s3 cp {0} s3://aws-grivam/Pipeline/ --acl public-read
+""".format(output_table))
     
     return tab
     

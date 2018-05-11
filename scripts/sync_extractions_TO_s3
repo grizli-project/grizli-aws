@@ -17,9 +17,16 @@ root=$1
 #                           --include "${root}/Extractions/${root}*" \
 #                           --follow-symlinks  ./ s3://aws-grivam/Pipeline/
 
+files=`ls *GrismFLT*`
+if [[ -z $files ]]; then 
+    echo "No files found in $PWD"
+    exit
+fi
 
 echo "Sync:    `date`" > ${root}.log
 aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Sync/
+
+rm ${root}.log
 
 aws s3 sync --exclude "*" --include "*GrismFLT*"  \
                           --include "*npy" \

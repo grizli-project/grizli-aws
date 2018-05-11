@@ -1,6 +1,6 @@
-"""
-Run all roots found in the synched directory
-"""
+###
+### Run all roots found in the synched directory
+###
 
 roots=`aws s3 ls s3://aws-grivam/Pipeline/Log/Sync/ | awk '{print $4}' | sed "s/.log//"`
 

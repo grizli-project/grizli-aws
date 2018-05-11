@@ -21,9 +21,10 @@ if __name__ == "__main__":
     from grizli.pipeline import auto_script
     utils.set_warnings()
     
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print('Usage: aws.py {field} {init/run/summary} [min_mag,max_mag]')
-    
+        exit 
+        
     root = sys.argv[1]
     
     if sys.argv[2] == 'init':
@@ -55,4 +56,4 @@ aws s3 sync --exclude "*" --include "{0}_*png" --include "*html" --acl public-re
         
         print(root, maglim)
             
-        #auto_extract(root=root, maglim=maglim) 
+        auto_extract(root=root, maglim=maglim) 

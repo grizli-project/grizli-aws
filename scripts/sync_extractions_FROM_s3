@@ -11,9 +11,9 @@ root=$1
 
 # Run in root directory, like /Volumes/Pegasus/Grizli/Automatic/
 
-aws s3 sync --exclude "*" --include "${root}/Extractions/*GrismFLT*"  \
-                          --include "${root}/Extractions/*npy" \
-                          --include "${root}/Extractions/*cat.fits" \
-                          --include "${root}/Extractions/${root}*" \
-                          --follow-symlinks  s3://aws-grivam/Pipeline/ ./
+aws s3 sync --exclude "*" --include "*GrismFLT*"  \
+                          --include "*npy" \
+                          --include "*cat.fits" \
+                          --include "${root}*" \
+                          --follow-symlinks  s3://aws-grivam/Pipeline/${root}/Extractions ./
 

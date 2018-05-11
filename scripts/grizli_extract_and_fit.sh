@@ -31,6 +31,9 @@ rm *GrismFL* *npy j[0-9]* *wcs*
 aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./
 aws s3 cp s3://aws-grivam/Pipeline/${root}_footprint.fits ./
 
+echo "Start:   `date`" > ${root}.log
+aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Start/
+
 ## Extractions
 grizli_extract_and_fit.py ${root} run ${maglim}
 
@@ -48,5 +51,8 @@ grizli_extract_and_fit.py ${root} summary
 # Sync final
 aws s3 sync --exclude "*" --include "${root}*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 aws s3 sync --exclude "*" --include "${root}*png" --include "${root}*reg" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+
+echo "Finished:   `date`" >> ${root}.log
+aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Finished/
 
 

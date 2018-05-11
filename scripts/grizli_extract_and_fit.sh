@@ -27,12 +27,12 @@ echo "Running on root=${root} with maglim=${maglim}"
 cd $HOME/GrizliExtract
 rm *GrismFL* *npy j[0-9]* *wcs*
 
+echo "Start:   `date`" > ${root}.log
+aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Start/
+
 # Copy from S3
 aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./
 aws s3 cp s3://aws-grivam/Pipeline/${root}_footprint.fits ./
-
-echo "Start:   `date`" > ${root}.log
-aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Start/
 
 ## Extractions
 grizli_extract_and_fit.py ${root} run ${maglim}
@@ -40,6 +40,9 @@ grizli_extract_and_fit.py ${root} run ${maglim}
 # Sync extractions
 aws s3 sync --exclude "*" --include "${root}_*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 aws s3 sync --exclude "*" --include "${root}*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+
+num_beams=`ls *beams.fits | wc -l`
+echo "${root} N=${num_beams}"
 
 # Redshift fits
 cpu_count=`python -c 'import multiprocessing; print(multiprocessing.cpu_count()//2)'`

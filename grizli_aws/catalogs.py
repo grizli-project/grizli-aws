@@ -72,7 +72,7 @@ Sync to s3: aws s3 cp {0} s3://aws-grivam/Pipeline/ --acl public-read
     
     return tab
     
-def fix_html_tables():
+def fix_html_tables(verbose=True):
     """
     Replace + with %2B in html files
     """
@@ -102,7 +102,7 @@ def fix_html_tables():
         for ext in ['fit', 'fit.zq']:
             html_file = './{0}-{1}.html'.format(root, ext)
             Key = 'Pipeline/{0}/Extractions/{0}-{1}.html'.format(root, ext)
-            print(html_file, Key)
+            #print(html_file, Key)
             
             s3.meta.client.download_file('aws-grivam', Key, html_file)
         
@@ -112,7 +112,9 @@ def fix_html_tables():
             fp.writelines(new_lines)
             fp.close()
             
-            s3.meta.client.upload_file(html_file, 'aws-grivam', Key, ExtraArgs={'ACL':'public-read'})
+            print("aws s3 cp {0} s3://aws-grivam/Pipeline/{1}/Extractions/ --acl public-read".format(html_file, root))
+            
+            #s3.meta.client.upload_file(html_file, 'aws-grivam', Key, ExtraArgs={'ACL':'public-read'})
             
              
             

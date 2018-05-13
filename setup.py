@@ -11,6 +11,7 @@ setup(name='grizli_aws',
                'scripts/grizli_extract_and_fit.py',
                'scripts/sync_extractions_TO_s3',
                'scripts/sync_extractions_FROM_s3',
-               'scripts/grizli_run_all_synced.sh'],
+               'scripts/grizli_run_all_synced.sh',
+               'scripts/grizli_check_bad_full.sh'],
       requires=['boto3']
      )

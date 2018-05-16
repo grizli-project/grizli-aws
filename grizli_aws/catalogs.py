@@ -61,7 +61,9 @@ def make_summary_html(output_table='grizli_aws.html', verbose=True):
     
     #tab['footprint'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}_footprint.pdf> <img width=400 src=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}_footprint.pdf></a>'.format(root.replace('+','%2B')) for root in roots]
     
-    tab['zhist'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png> <img width=400 src=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png></a>'.format(root.replace('+','%2B')) for root in roots]
+    tab['footprint'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}_footprint.png> <img height=300 src=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}_footprint.png></a>'.format(root.replace('+','%2B')) for root in roots]
+    
+    tab['zhist'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png> <img height=300 src=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png></a>'.format(root.replace('+','%2B')) for root in roots]
     
     tab.write_sortable_html(output_table, localhost=False, max_lines=10000)
     print("""
@@ -107,6 +109,16 @@ def fix_html_tables(verbose=True):
             s3.meta.client.download_file('aws-grivam', Key, html_file)
         
             lines = open(html_file).readlines()
+            
+            needs_fix = False
+            for line in lines:
+                if ('+' in root) & (root in line):
+                    needs_fix = True
+                    break
+            
+            if not needs_fix:
+                continue
+                
             new_lines = [line.replace(root, root.replace('+','%2B')) for line in lines] 
             fp = open(html_file,'w')
             fp.writelines(new_lines)

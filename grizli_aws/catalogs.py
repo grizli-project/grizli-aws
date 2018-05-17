@@ -55,9 +55,9 @@ def make_summary_html(output_table='grizli_aws.html', verbose=True):
     tab['root'] = roots
     tab['modified'] = dates
     
-    tab['Full'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}-fit.html>Full</a>'.format(root.replace('+','%2B')) for root in roots]
+    tab['Full'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}-full.html?chinu_max=2&bic_diff_min=30&zwidth1_max=0.01>Full</a>'.format(root.replace('+','%2B')) for root in roots]
     
-    tab['Best'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}-fit.zq.html>Best</a>'.format(root.replace('+','%2B')) for root in roots]
+    #tab['Best'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}-fit.zq.html>Best</a>'.format(root.replace('+','%2B')) for root in roots]
     
     #tab['footprint'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}_footprint.pdf> <img width=400 src=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}_footprint.pdf></a>'.format(root.replace('+','%2B')) for root in roots]
     

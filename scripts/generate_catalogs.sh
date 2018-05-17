@@ -1,3 +1,4 @@
+# Generate catalogs for fields that don't have them
 
 roots=`python -c "from grizli_aws import catalogs; roots, dates = catalogs.get_roots(verbose=False); print('\n'.join(roots[::-1]))"`
 

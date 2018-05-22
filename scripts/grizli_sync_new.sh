@@ -1,12 +1,19 @@
 roots=`cat GrizliPrepPassed.log`
 for root in $roots; do
     
+    # Sync
     cat=`aws s3 ls s3://aws-grivam/Pipeline/Log/Sync/${root}.log`
+    
+    # info.fits
     #cat=`aws s3 ls s3://aws-grivam/Pipeline/${root}/Extractions/${root}.info.fits`
     
     if [[ -z $cat ]]; then
         echo "! Run $root"
         aws s3 cp ${root}_footprint.fits s3://aws-grivam/Pipeline/
+        aws s3 cp ${root}_footprint.pdf s3://aws-grivam/Pipeline/
+        convert -density 150  ${root}_footprint.pdf ${root}_footprint.png
+        aws s3 cp ${root}_footprint.png s3://aws-grivam/Pipeline/
+        
         cd ${root}/Extractions/
         sync_extractions_TO_s3 ${root}
         cd ../../

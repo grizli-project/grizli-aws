@@ -57,10 +57,14 @@ grizli_check_bad_full.sh
 # Summary HTML & zhist figure
 grizli_extract_and_fit.py ${root} summary
 
-# Sync final
-aws s3 sync --exclude "*" --include "${root}*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+#### Sync final
+# PNG, HTML, REG - public-read
 aws s3 sync --exclude "*" --include "${root}*png" --include "${root}*reg" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 
+# FITS files - protected
+aws s3 sync --exclude "*" --include "${root}*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+
+## Log Finished
 echo "Finished:   `date`" >> ${root}.log
 aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Finished/
 

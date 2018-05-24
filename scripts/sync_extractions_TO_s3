@@ -30,8 +30,15 @@ rm ${root}.log
 
 aws s3 sync --exclude "*" --include "*GrismFLT*"  \
                           --include "*npy" \
-                          --include "*cat.fits" \
-                          --include "${root}*" \
+                          --include "*wcs.fits" \
                           --follow-symlinks ./ s3://aws-grivam/Pipeline/${root}/Extractions
 
+# Public Read on FITS files
+aws s3 sync --exclude "*"  --acl public-read --include "${root}*fits" \
+                          --include "*cat.fits" \
+                          --follow-symlinks ./ s3://aws-grivam/Pipeline/${root}/Extractions
 
+# Public Read on PNG
+aws s3 sync --exclude "*" --acl public-read --include "*png"  \
+                          --include "*html" \
+                          --follow-symlinks ./ s3://aws-grivam/Pipeline/${root}/Extractions

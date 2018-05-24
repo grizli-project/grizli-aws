@@ -38,7 +38,7 @@ aws s3 cp s3://aws-grivam/Pipeline/${root}_footprint.fits ./
 grizli_extract_and_fit.py ${root} run ${maglim}
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}_*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+aws s3 sync --exclude "*" --include "${root}_*fits" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 aws s3 sync --exclude "*" --include "${root}*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 
 # Check for corrupt full.fits files
@@ -61,8 +61,8 @@ grizli_extract_and_fit.py ${root} summary
 # PNG, HTML, REG - public-read
 aws s3 sync --exclude "*" --include "${root}*png" --include "${root}*reg" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 
-# FITS files - protected
-aws s3 sync --exclude "*" --include "${root}*fits" ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+# FITS files #- protected
+aws s3 sync --exclude "*" --include "${root}*fits" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 
 ## Log Finished
 echo "Finished:   `date`" >> ${root}.log

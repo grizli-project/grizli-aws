@@ -64,13 +64,16 @@ def regenerate_webpages():
 
         # ACS
         if 't_g800l' in fit.colnames:
-            cols = ['root', 'idx','ra', 'dec', 't_g800l', 'mag_auto', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'png_stack', 'png_full', 'png_line']
+            cols = ['root', 'idx','ra', 'dec', 't_g800l', 'mag_auto', 'is_point', 'z_map', 'z02', 'z97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'png_stack', 'png_full', 'png_line']
         else:
-            cols = ['root', 'idx','ra', 'dec', 'mag_auto', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'png_stack', 'png_full', 'png_line']
+            cols = ['root', 'idx','ra', 'dec', 't_g102', 't_g141', 'mag_auto', 'is_point', 'z_map', 'z02', '97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'png_stack', 'png_full', 'png_line']
             
         fit['ra'].format = '.4f'
         fit['dec'].format = '.4f'
+        fit['z02'].format = '.2f'
+        fit['z97'].format = '.2f'
         fit['mag_auto'].format = '.2f'
+        fit['t_g800l'].format = '.0f'
         fit['t_g102'].format = '.0f'
         fit['t_g141'].format = '.0f'
         fit['zq'].format = '.1f'
@@ -80,7 +83,7 @@ def regenerate_webpages():
         for l in ['Ha','OIII','Hb','OII','SIII']:
             fit['sn_'+l].format = '.1f'
             
-        fit[cols].write_sortable_html(root+'-full.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'bic_diff', 'chinu', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
+        fit[cols].write_sortable_html(root+'-full.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
         
         if '+' in root:
             ext = 'html'

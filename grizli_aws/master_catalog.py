@@ -20,7 +20,7 @@ def summary():
     
     print('aws s3 cp summary-18.05.17.html s3://aws-grivam/Pipeline/ --acl public-read')
     
-def regenerate_webpages():
+def regenerate_webpages(outroot='master'):
     """
 
     roots=`python -c "from grizli_aws import catalogs; roots, dates = catalogs.get_roots(verbose=False); print('\n'.join(roots))"`
@@ -37,7 +37,7 @@ def regenerate_webpages():
     import numpy as np
     
     from grizli import utils
-    
+    from astropy import table
     ## retrieve
     
     roots = [file.split('.info')[0] for file in glob.glob('*info.fits')]
@@ -45,17 +45,37 @@ def regenerate_webpages():
     fpi = open('sync_to_s3.sh', 'w')
     fpi.write('# \n')
     fpi.close()
-        
+    
+    tables = []
+    
     for root in roots:
-        print(root)
         fit = utils.GTable.gread(root+'.info.fits')
+        print(root, len(fit))
         
         pa = np.polyfit([16, 21, 24, 25.5], [4.5, 2.6, 2.3, 2.1], 2)
         py = np.polyval(pa, fit['mag_auto'])
 
         # Point source
         point_source = (fit['flux_radius'] < py) & (fit['mag_auto'] < 23)
-        fit['is_point'] = point_source*1
+        fit['is_point'] = point_source*2-1
+        
+        N = len(fit)
+        aws_col = {}
+        for c in ['png_stack', 'png_full', 'png_line']:
+            aws_col[c] = []
+
+        for i in range(N):
+            root = fit['root'][i]
+
+            aws = 'https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}'.format(root)
+
+            for c in ['png_stack', 'png_full', 'png_line']:
+                pre = fit[c][i]
+                aws_col[c].append(pre.replace(root, aws).replace(root, root.replace('+','%2B')))
+
+        for c in ['png_stack', 'png_full', 'png_line']:
+            fit['aws_'+c] = aws_col[c]
+        
         
         fit['log_mass'] = np.log10(fit['stellar_mass'])
         fit['log_mass'].format = '.2f' 
@@ -64,9 +84,9 @@ def regenerate_webpages():
 
         # ACS
         if 't_g800l' in fit.colnames:
-            cols = ['root', 'idx','ra', 'dec', 't_g800l', 'mag_auto', 'is_point', 'z_map', 'z02', 'z97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'png_stack', 'png_full', 'png_line']
+            cols = ['root', 'idx','ra', 'dec', 't_g800l', 'mag_auto', 'is_point', 'z_map', 'z02', 'z97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
         else:
-            cols = ['root', 'idx','ra', 'dec', 't_g102', 't_g141', 'mag_auto', 'is_point', 'z_map', 'z02', '97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'png_stack', 'png_full', 'png_line']
+            cols = ['root', 'idx','ra', 'dec', 't_g102', 't_g141', 'mag_auto', 'is_point', 'z_map', 'z02', '97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
             
         fit['ra'].format = '.4f'
         fit['dec'].format = '.4f'
@@ -83,7 +103,7 @@ def regenerate_webpages():
         for l in ['Ha','OIII','Hb','OII','SIII']:
             fit['sn_'+l].format = '.1f'
             
-        fit[cols].write_sortable_html(root+'-full.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
+        fit[cols].write_sortable_html(root+'-full.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'a_image', 'flux_radius', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
         
         if '+' in root:
             ext = 'html'
@@ -112,7 +132,22 @@ def regenerate_webpages():
         fpi.write('aws s3 cp {0}-full.json s3://aws-grivam/Pipeline/{0}/Extractions/ --acl public-read\n'.format(root))
         fpi.close()
         
-    fpi.close()
+        tables.append(fit)
+
+    master = table.vstack(tables)
+    master[cols].write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'a_image', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
+    
+    new = utils.GTable()
+    for col in fit.colnames:
+        new[col] = master[col]
+        
+    new.write(outroot+'.fits', overwrite=True)
+    
+    print('aws s3 cp {0}.fits s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
+    print('aws s3 cp {0}.html s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
+    print('aws s3 cp {0}.json s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
+    
+    
     print ('bash sync_to_s3.sh')
 
 def master_catalog(outroot='grizli-18.05.17-full'):

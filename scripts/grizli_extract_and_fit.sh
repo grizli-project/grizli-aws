@@ -55,6 +55,7 @@ mpiexec -n $cpu_count python -m mpi4py.futures $GRIZLICODE/grizli/pipeline/run_M
 grizli_check_bad_full.sh
 
 # Summary HTML & zhist figure
+# root=`ls *phot.fits | sed "s/_/ /" | awk '{print $1}'`
 grizli_extract_and_fit.py ${root} summary
 
 #### Sync final

@@ -48,7 +48,7 @@ aws s3 sync --exclude "*" --include "{0}_*png" --include "*html" --acl public-re
 
     elif sys.argv[2] == 'summary':
         auto_script.summary_catalog(field_root=root, dzbin=0.01, use_localhost=False, filter_bandpasses=None)
-    else:
+    else: # "run"
         if len(sys.argv) > 3:
             maglim = np.cast[float](sys.argv[3].split(','))
         else:

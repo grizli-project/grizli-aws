@@ -1,6 +1,7 @@
-def summary():
+def summary(outroot='summary-18.05.17'):
     
     from hsaquery import overlaps
+    from grizli import utils
     
     overlaps.summary_table(output='pointing_summary')
     
@@ -14,11 +15,12 @@ def summary():
     
     tab['zhist'] = ['<a href=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png> <img height=200 src=https://s3.amazonaws.com/aws-grivam/Pipeline/{0}/Extractions/{0}_zhist.png></a>'.format(root.replace('+','%2B')) for root in roots]
     
-    cols = ['NAME', 'RA', 'DEC', 'E(B-V)', 'GalLat', 'GalLon', 'NFILT', 'filter', 'target', 'target_description', 'proposal_id', 'pi_name', 'TexpG102', 'PAG102', 'TexpG141', 'PAG141', 'MAST', 'Full', 'fp', 'zhist']
+    #cols = ['NAME', 'RA', 'DEC', 'E(B-V)', 'GalLat', 'GalLon', 'NFILT', 'filter', 'target', 'target_description', 'proposal_id', 'pi_name', 'TexpG102', 'PAG102', 'TexpG141', 'PAG141', 'MAST', 'Full', 'fp', 'zhist']
+    cols = ['NAME', 'RA', 'DEC', 'E(B-V)', 'GalLat', 'GalLon', 'NFILT', 'filter', 'target', 'proposal_id', 'pi_name', 'TexpG102', 'PAG102', 'TexpG141', 'PAG141', 'MAST', 'Full', 'fp', 'zhist']
     
-    tab[cols].write_sortable_html('summary-18.05.17.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'bic_diff', 'chinu', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=False)
+    tab[cols].write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'bic_diff', 'chinu', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=False)
     
-    print('aws s3 cp summary-18.05.17.html s3://aws-grivam/Pipeline/ --acl public-read')
+    print('aws s3 cp {0}.html s3://aws-grivam/Pipeline/ --acl public-read'.format(outroot))
     
 def regenerate_webpages(outroot='master'):
     """
@@ -31,6 +33,14 @@ def regenerate_webpages(outroot='master'):
     for root in $roots; do
         aws s3 cp s3://aws-grivam/Pipeline/${root}/Extractions/${root}.info.fits ./
     done
+    
+    for root in $roots; do
+        aws s3 ls s3://aws-grivam/Pipeline/${root}/Extractions/ > /tmp/x
+        echo $root
+        grep beams.fits /tmp/x | wc
+        grep full.fits /tmp/x | wc
+    done
+    
 
     """
     import glob
@@ -82,16 +92,17 @@ def regenerate_webpages(outroot='master'):
         
         cols = ['root', 'idx','ra', 'dec', 't_g102', 't_g141', 'mag_auto', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'png_stack', 'png_full', 'png_line']
 
-        # ACS
-        if 't_g800l' in fit.colnames:
-            cols = ['root', 'idx','ra', 'dec', 't_g800l', 'mag_auto', 'is_point', 'z_map', 'z02', 'z97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
-        else:
-            cols = ['root', 'idx','ra', 'dec', 't_g102', 't_g141', 'mag_auto', 'is_point', 'z_map', 'z02', '97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
-            
+        # Check grisms
+        cols = ['root', 'idx','ra', 'dec', 'mag_auto', 'is_point', 'z_map', 'z02', 'z97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
+        for grism in ['g800l', 'g102', 'g141'][::-1]:
+            if np.isfinite(fit['t_'+grism]).sum() > 0:
+                cols.insert(4, 't_'+grism)
+                            
         fit['ra'].format = '.4f'
         fit['dec'].format = '.4f'
         fit['z02'].format = '.2f'
         fit['z97'].format = '.2f'
+        fit['flux_radius'].format = '.1f'
         fit['mag_auto'].format = '.2f'
         fit['t_g800l'].format = '.0f'
         fit['t_g102'].format = '.0f'
@@ -135,7 +146,13 @@ def regenerate_webpages(outroot='master'):
         tables.append(fit)
 
     master = table.vstack(tables)
-    master[cols].write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'a_image', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
+    
+    cols = ['root', 'idx','ra', 'dec', 'mag_auto', 'is_point', 'z_map', 'z02', 'z97', 'chinu', 'bic_diff', 'zwidth1', 'a_image', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
+    for grism in ['g800l', 'g102', 'g141'][::-1]:
+        if np.isfinite(master['t_'+grism]).sum() > 0:
+            cols.insert(4, 't_'+grism)
+            
+    master[cols].write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'a_image', 'flux_radius', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
     
     new = utils.GTable()
     for col in fit.colnames:
@@ -216,7 +233,7 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     else:
         clip = fit['mag_auto'] > 0
         
-    fit[cols][clip].filled(fill_value=-1).write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'bic_diff', 'chinu', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'a_image'], use_json=True)
+    fit[cols][clip].filled(fill_value=-1).write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'a_image', 'flux_radius', 'zwidth1', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII'], use_json=True)
     
     new = utils.GTable()
     for col in fit.colnames:
@@ -228,10 +245,10 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     print('aws s3 cp {0}.html s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
     print('aws s3 cp {0}.json s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
 
-def summary_table():
+def summary_table(output_table='summary_glass-acs-2018.05.21'
+):
     from hsaquery import overlaps
     
-    output_table = 'summary_glass-acs-2018.05.21'
     overlaps.summary_table(output=output_table)
     
     tab = utils.GTable.gread(output_table+'.fits')

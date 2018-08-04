@@ -6,7 +6,7 @@ def fit_lambda(root='j100025+021706', newfunc=True):
     import json
 
     beams, files = get_needed_paths(root)
-    if len(beams):
+    if len(beams) == 0:
         print('{0}: No beams to fit'.format(root))
         
         return False

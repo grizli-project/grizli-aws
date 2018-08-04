@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 def fit_lambda(root='j100025+021706', newfunc=True):
 
+    import numpy as np
     import boto3
     import json
 
+    beams, files = get_needed_paths(root)
+    if len(beams):
+        print('{0}: No beams to fit'.format(root))
+        
+        return False
     # Auth to create a Lambda function (credentials are picked up from above .aws/credentials)
     session = boto3.Session()
 
@@ -30,9 +36,7 @@ def fit_lambda(root='j100025+021706', newfunc=True):
         MemorySize=1024,
         Publish=True
     )
-    
-    beams, files = get_needed_paths(root)
-    
+        
     # Auth to create a Lambda function 
     session = boto3.Session()
     client = session.client('lambda', region_name='us-east-1')
@@ -50,6 +54,8 @@ def fit_lambda(root='j100025+021706', newfunc=True):
             InvocationType='Event',
             LogType='Tail',
             Payload=json.dumps(event))
+    
+    time.sleep(300*np.ceil(len(beams)/500))
     
     # Check products
     s3 = boto3.resource('s3')
@@ -108,5 +114,10 @@ if __name__ == "__main__":
         exit 
     
     root = sys.argv[1]
-    fit_lambda(root=root, newfunc=True)
+    if len(sys.argv) == 3:
+        newfunc = bool(sys.argv[2])
+    else:
+        newfunc = True
+        
+    fit_lambda(root=root, newfunc=newfunc)
     

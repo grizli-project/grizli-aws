@@ -18,25 +18,28 @@ def fit_lambda(root='j100025+021706', newfunc=True):
 
     if newfunc:
         func = 'GrizliZ'+root.replace('+','p').replace('-','m')
+        
+        try:
+            # Create the function
+            response = client.create_function(
+                FunctionName=func,
+                Runtime='python3.6',
+                Role='arn:aws:iam::521547342229:role/grivam_lambda',
+                Handler='process.handler',
+                Code={
+                    'S3Bucket': 'aws-grivam', 
+                    'S3Key': 'venv.zip'
+                },
+                Description='Lambda redshift fits: '+root,
+                Timeout=300,
+                MemorySize=1024,
+                Publish=True
+            )
+        except:
+            pass
     else:
         func = 'GrizliTestFunction'
-        
-    # Create the function
-    response = client.create_function(
-        FunctionName=func,
-        Runtime='python3.6',
-        Role='arn:aws:iam::521547342229:role/grivam_lambda',
-        Handler='process.handler',
-        Code={
-            'S3Bucket': 'aws-grivam', 
-            'S3Key': 'venv.zip'
-        },
-        Description='Lambda redshift fits: '+root,
-        Timeout=300,
-        MemorySize=1024,
-        Publish=True
-    )
-        
+                
     # Auth to create a Lambda function 
     session = boto3.Session()
     client = session.client('lambda', region_name='us-east-1')

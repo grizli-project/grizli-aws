@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 def fit_lambda(root='j100025+021706', newfunc=True):
-
+    import time
+    import os
     import numpy as np
     import boto3
     import json
@@ -58,7 +59,10 @@ def fit_lambda(root='j100025+021706', newfunc=True):
             LogType='Tail',
             Payload=json.dumps(event))
     
-    time.sleep(300*np.ceil(len(beams)/500))
+    sleep_time = 300*np.ceil(len(beams)/500)
+    print('Sleep: {0}'.format(sleep_time))
+    
+    time.sleep(sleep_time)
     
     # Check products
     s3 = boto3.resource('s3')

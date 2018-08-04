@@ -108,5 +108,5 @@ if __name__ == "__main__":
         exit 
     
     root = sys.argv[1]
-    fit_lambda(root='j100025+021706', newfunc=True)
+    fit_lambda(root=root, newfunc=True)
     

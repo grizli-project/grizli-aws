@@ -49,8 +49,9 @@ echo "${root} N=${num_beams}"
 
 # First try with AWS Lambda
 fit_redshift_lambda.py ${root} True
-for iter in range(5):
+for iter in 1 2 3 4 5; do
     fit_redshift_lambda.py ${root} True
+done
 
 # Sync fits from lambda
 aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./ --acl public-read

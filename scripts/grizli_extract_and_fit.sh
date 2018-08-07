@@ -49,7 +49,7 @@ echo "${root} N=${num_beams}"
 
 # First try with AWS Lambda
 fit_redshift_lambda.py ${root} True
-for iter in 1 2 3 4 5; do
+for iter in 1 2 3; do
     fit_redshift_lambda.py ${root} True
 done
 

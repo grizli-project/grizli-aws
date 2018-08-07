@@ -47,9 +47,15 @@ grizli_check_bad_full.sh
 num_beams=`ls *beams.fits | wc -l`
 echo "${root} N=${num_beams}"
 
-# Redshift fits
+# First try with AWS Lambda
+fit_redshift_lambda.py ${root}
+# Sync fits from lambda
+aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./ --acl public-read
+
+# Redshift fits, those that weren't fit by lambda
 cpu_count=`python -c 'import multiprocessing; print(multiprocessing.cpu_count()//2)'`
 mpiexec -n $cpu_count python -m mpi4py.futures $GRIZLICODE/grizli/pipeline/run_MPI.py
+
 
 # Check for corrupt full.fits files
 grizli_check_bad_full.sh

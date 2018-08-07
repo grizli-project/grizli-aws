@@ -40,7 +40,9 @@ def fit_lambda(root='j100025+021706', newfunc=True):
             pass
     else:
         func = 'GrizliTestFunction'
-                
+     
+    print ('Lambda function: {0} (newfunc={1})'.format(func, newfunc))
+               
     # Auth to create a Lambda function 
     session = boto3.Session()
     client = session.client('lambda', region_name='us-east-1')
@@ -122,7 +124,7 @@ if __name__ == "__main__":
     
     root = sys.argv[1]
     if len(sys.argv) == 3:
-        newfunc = bool(sys.argv[2])
+        newfunc = bool(sys.argv[2].lower() == 'true')
     else:
         newfunc = True
         

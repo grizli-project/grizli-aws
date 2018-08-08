@@ -14,6 +14,7 @@ fi
 
 for root in $roots; do
     start=`aws s3 ls s3://aws-grivam/Pipeline/Log/Start/${root}.log | awk '{print $4}'`
+    extract=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/${root}.log | awk '{print $4}'`
     stop=`aws s3 ls s3://aws-grivam/Pipeline/Log/Finished/${root}.log| awk '{print $4}'`
     
     if [[ -z $start && -z $stop ]]; then
@@ -24,7 +25,7 @@ for root in $roots; do
         beams=`grep beams.fits /tmp/ext | wc -l`    
         full=`grep full.fits /tmp/ext | wc -l`    
     
-        echo "Skip ${root} (start=$start  stop=$stop) ${beams} / ${full}"
+        echo "Skip ${root} (start=$start extract=$extract  stop=$stop) ${beams} / ${full}"
     fi
 done
 

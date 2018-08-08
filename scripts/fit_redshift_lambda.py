@@ -61,7 +61,7 @@ def fit_lambda(root='j100025+021706', newfunc=True):
             LogType='Tail',
             Payload=json.dumps(event))
     
-    sleep_time = 300*np.ceil(len(beams)/500)
+    sleep_time = 303*np.ceil(len(beams)/950)
     print('{0}: sleep {1}'.format(time.ctime(), sleep_time))
     
     time.sleep(sleep_time)

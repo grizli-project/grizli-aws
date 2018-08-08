@@ -66,16 +66,9 @@ def fit_lambda(root='j100025+021706', newfunc=True):
     
     time.sleep(sleep_time)
     
-    # Check products
-    s3 = boto3.resource('s3')
-    s3_client = boto3.client('s3')
-    bkt = s3.Bucket('aws-grivam')
+    # Status again to check products
+    beams, files = get_needed_paths(root)
     
-    for obj in beams:
-        obj_root = obj.split('.beams')[0]
-        files = [obj.key for obj in bkt.objects.filter(Prefix=obj_root)]
-        print(obj_root, obj_root+'.full.fits' in files)
-        
 def get_needed_paths(root):
     """
     Get the S3 paths of the "beams.fits" files that still need to be fit.

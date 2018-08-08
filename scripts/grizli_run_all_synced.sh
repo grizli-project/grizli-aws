@@ -18,7 +18,7 @@ for root in $roots; do
     
     if [[ -z $start && -z $stop ]]; then
         echo "Run ${root}"
-        grizli_extract_and_fit.sh ${root} ${maglim}
+        grizli_extract_only.sh ${root} ${maglim}
     else
         aws s3 ls s3://aws-grivam/Pipeline/${root}/Extractions/ > /tmp/ext
         beams=`grep beams.fits /tmp/ext | wc -l`    

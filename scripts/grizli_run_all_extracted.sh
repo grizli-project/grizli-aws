@@ -21,7 +21,7 @@ for root in $roots; do
         echo "Run ${root}"
         date > ${root}.log
         aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/ExtractStart/
-        grizli_extract_only.sh ${root} ${maglim}
+        grizli_extract_and_fit.sh ${root} ${maglim}
     else
         aws s3 ls s3://aws-grivam/Pipeline/${root}/Extractions/ > /tmp/ext
         beams=`grep beams.fits /tmp/ext | wc -l`    

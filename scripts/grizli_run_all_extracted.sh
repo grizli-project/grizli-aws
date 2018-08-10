@@ -17,7 +17,7 @@ for root in $roots; do
     extract=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/${root}.log | awk '{print $4}'`
     stop=`aws s3 ls s3://aws-grivam/Pipeline/Log/Finished/${root}.log| awk '{print $4}'`
     
-    if [[ -z $start -z $stop ]]; then
+    if [[ -z $start && -z $stop ]]; then
         echo "Run ${root}"
         date > ${root}.log
         aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/ExtractStart/

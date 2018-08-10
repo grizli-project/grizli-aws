@@ -41,6 +41,13 @@ grizli_extract_and_fit.py ${root} run ${maglim}
 aws s3 sync --exclude "*" --include "${root}_*fits" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 aws s3 sync --exclude "*" --include "${root}*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
 
+# Log
+echo "# Beams extracted:   `date`" >> ${root}.log
+aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Extract/ --acl public-read
+
+dfits *beams.fits | fitsort RA DEC ID COUNT > ${root}.beams.log
+aws s3 cp ${root}.beams.log s3://aws-grivam/Pipeline/Log/Beams/ --acl public-read
+
 # Check for corrupt full.fits files
 grizli_check_bad_full.sh
 
@@ -48,13 +55,13 @@ num_beams=`ls *beams.fits | wc -l`
 echo "${root} N=${num_beams}"
 
 # First try with AWS Lambda
-fit_redshift_lambda.py ${root} True
-for iter in 1 2 3; do
-    fit_redshift_lambda.py ${root} True
-done
-
-# Sync fits from lambda
-aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./ --acl public-read
+# fit_redshift_lambda.py ${root} False
+# for iter in 1 2 3; do
+#     fit_redshift_lambda.py ${root} False
+# done
+# 
+# # Sync fits from lambda
+# aws s3 sync s3://aws-grivam/Pipeline/${root}/Extractions/ ./ --acl public-read
 
 # Redshift fits, those that weren't fit by lambda
 cpu_count=`python -c 'import multiprocessing; print(multiprocessing.cpu_count()//2)'`

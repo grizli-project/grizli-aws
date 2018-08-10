@@ -14,6 +14,7 @@ setup(name='grizli_aws',
                'scripts/fit_redshift_lambda.py',
                'scripts/sync_extractions_FROM_s3',
                'scripts/grizli_run_all_synced.sh',
+               'scripts/grizli_run_all_extracted.sh',
                'scripts/grizli_check_bad_full.sh'],
       requires=['boto3']
      )

@@ -13,12 +13,14 @@ else
 fi
 
 for root in $roots; do
-    start=`aws s3 ls s3://aws-grivam/Pipeline/Log/Start/${root}.log | awk '{print $4}'`
+    start=`aws s3 ls s3://aws-grivam/Pipeline/Log/ExtractStart/${root}.log | awk '{print $4}'`
     extract=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/${root}.log | awk '{print $4}'`
     stop=`aws s3 ls s3://aws-grivam/Pipeline/Log/Finished/${root}.log| awk '{print $4}'`
     
-    if [[ -z $stop ]]; then
+    if [[ -z $start -z $stop ]]; then
         echo "Run ${root}"
+        date > ${root}.log
+        aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/ExtractStart/
         grizli_extract_only.sh ${root} ${maglim}
     else
         aws s3 ls s3://aws-grivam/Pipeline/${root}/Extractions/ > /tmp/ext

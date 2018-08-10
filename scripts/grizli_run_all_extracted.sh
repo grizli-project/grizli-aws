@@ -17,7 +17,7 @@ for root in $roots; do
     extract=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/${root}.log | awk '{print $4}'`
     stop=`aws s3 ls s3://aws-grivam/Pipeline/Log/Finished/${root}.log| awk '{print $4}'`
     
-    if [[ -z $extract && -z $stop ]]; then
+    if [[ -z $stop ]]; then
         echo "Run ${root}"
         grizli_extract_only.sh ${root} ${maglim}
     else

@@ -5,7 +5,7 @@ def auto_run(root='j023507-040202'):
     import matplotlib.pyplot as plt
     
     from grizli import utils
-    from grizli.pipeline import auto_script
+    from grizli.pipeline import auto_script, photoz
     utils.set_warnings()
     
     tab = utils.GTable.gread('{0}_footprint.fits'.format(root))

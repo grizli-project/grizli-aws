@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-def auto_extract(root='j023507-040202'):
+def auto_run(root='j023507-040202'):
     
     import os
     import matplotlib.pyplot as plt

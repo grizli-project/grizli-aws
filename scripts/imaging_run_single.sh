@@ -19,7 +19,7 @@ echo "Running on root=${root}"
 
 # Clean up
 cd $HOME/GrizliExtract
-rm *
+rm -rf $HOME/GrizliExtract/*
 
 echo "Start:   `date`" > ${root}.log
 aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Start/
@@ -30,12 +30,14 @@ aws s3 cp s3://grizli-imaging/Pipeline/Fields/${root}_footprint.fits ./
 ## Extractions
 imaging_run_single.py ${root} 
 
-rm *wcs-ref.fits
-rm astrodrizzle.log
+rm ${root}/Prep/*wcs-ref.fits
+rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}*" --include "*.log" --include "*fine*" --acl public-read ./ s3://grizli-imaging/Pipeline/${root}/
+aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --acl public-read ./ s3://grizli-imaging/Pipeline/${root}/
 
 # Done
 echo "Finished:   `date`" > ${root}.log
 aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Finished/
+
+cd $HOME/GrizliExtract

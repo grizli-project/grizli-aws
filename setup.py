@@ -1,4 +1,5 @@
 from distutils.core import setup
+import glob
 
 setup(name='grizli_aws',
       version='0.1',
@@ -7,14 +8,6 @@ setup(name='grizli_aws',
       author_email='brammer@stsci.edu',
       url='https://github.com/grizli-project/grizli-aws',
       packages=['grizli_aws'],
-      scripts=['scripts/grizli_extract_and_fit.sh',
-               'scripts/grizli_extract_only.sh',
-               'scripts/grizli_extract_and_fit.py',
-               'scripts/sync_extractions_TO_s3',
-               'scripts/fit_redshift_lambda.py',
-               'scripts/sync_extractions_FROM_s3',
-               'scripts/grizli_run_all_synced.sh',
-               'scripts/grizli_run_all_extracted.sh',
-               'scripts/grizli_check_bad_full.sh'],
+      scripts=glob.glob('scripts/*'),
       requires=['boto3']
      )

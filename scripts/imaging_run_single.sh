@@ -36,8 +36,16 @@ rm ${root}/Prep/astrodrizzle.log
 # Sync extractions
 aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --acl public-read ./ s3://grizli-imaging/Pipeline/${root}/
 
+if [ -e ${root}/Prep/${root}_phot.fits ]; then 
+    echo "Success!"
+    echo "Finished:   `date`" > ${root}.log
+    aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Finished/
+else
+    echo "Fail..."
+    echo "Failed:   `date`" > ${root}.log
+    aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Failed/
+fi
+
 # Done
-echo "Finished:   `date`" > ${root}.log
-aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Finished/
 
 cd $HOME/GrizliExtract

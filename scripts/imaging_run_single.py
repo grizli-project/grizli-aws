@@ -20,6 +20,16 @@ def auto_extract(root='j023507-040202'):
     
     plt.ioff()
     fig = auto_script.field_rgb(root=root, HOME_PATH=HOME_PATH, xsize=18)
+    plt.close(fig)
+    
+    # Photo-z
+    try:
+        out = photoz.eazy_photoz(root, object_only=False, force=True,
+                              aper_ix=1, sys_err=0.05, apply_prior=False,
+                              beta_prior=True, 
+                              external_limits=3, external_sys_err=0.3)
+    except:
+        pass
     
 if __name__ == "__main__":
     import sys

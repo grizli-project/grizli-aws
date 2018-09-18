@@ -30,6 +30,12 @@ aws s3 cp s3://grizli-imaging/Pipeline/Fields/${root}_footprint.fits ./
 ## Extractions
 imaging_run_single.py ${root} 
 
+rm *wcs-ref.fits
+rm astrodrizzle.log
+
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}_*fits" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
-aws s3 sync --exclude "*" --include "${root}*png" --include "*html" --acl public-read ./ s3://aws-grivam/Pipeline/${root}/Extractions/
+aws s3 sync --exclude "*" --include "${root}*" --include "*.log" --include "*fine*" --acl public-read ./ s3://grizli-imaging/Pipeline/${root}/
+
+# Done
+echo "Finished:   `date`" > ${root}.log
+aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Finished/

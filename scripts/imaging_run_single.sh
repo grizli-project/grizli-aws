@@ -17,8 +17,9 @@ root=$1
 
 echo "Running on root=${root}"
 
-# Clean up
+# Initialize working directory
 rm -rf /tmp/GrizliExtract
+mkdir /tmp/GrizliExtract
 cd /tmp/GrizliExtract
 
 echo "Start:   `date`" > ${root}.log

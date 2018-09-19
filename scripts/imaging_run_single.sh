@@ -20,6 +20,8 @@ echo "Running on root=${root}"
 # Initialize working directory
 rm -rf /tmp/GrizliExtract
 mkdir /tmp/GrizliExtract
+chmod ugoa+rwx /tmp/GrizliExtract
+
 cd /tmp/GrizliExtract
 
 echo "Start:   `date`" > ${root}.log

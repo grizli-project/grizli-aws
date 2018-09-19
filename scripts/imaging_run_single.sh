@@ -18,8 +18,8 @@ root=$1
 echo "Running on root=${root}"
 
 # Clean up
-cd $HOME/GrizliExtract
-rm -rf $HOME/GrizliExtract/*
+rm -rf /tmp/GrizliExtract
+cd /tmp/GrizliExtract
 
 echo "Start:   `date`" > ${root}.log
 aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Start/
@@ -48,4 +48,4 @@ fi
 
 # Done
 
-cd $HOME/GrizliExtract
+cd /tmp/GrizliExtract

@@ -34,6 +34,7 @@ aws s3 cp s3://grizli-imaging/Pipeline/Fields/${root}_footprint.fits ./
 imaging_run_single.py ${root} 
 
 rm ${root}/Prep/*wcs-ref.fits
+rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions

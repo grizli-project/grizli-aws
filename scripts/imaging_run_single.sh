@@ -41,11 +41,11 @@ rm ${root}/Prep/astrodrizzle.log
 aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --acl public-read ./ s3://grizli-imaging/Pipeline/
 
 if [ -e ${root}/Prep/${root}_phot.fits ]; then 
-    echo "Success!"
+    echo "${root}: Success"
     echo "Finished:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Finished/
 else
-    echo "Fail..."
+    echo "${root}: Fail..."
     echo "Failed:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Failed/
 fi

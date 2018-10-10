@@ -23,11 +23,14 @@ for root in $roots; do
     # Check from existing
     ostart=`grep ${root}.log /tmp/grizli_started.log | awk '{print $4}'`
     ostop=`grep ${root}.log /tmp/grizli_finished.log | awk '{print $4}'`
+    #if [[ -z $ostart && -z $ostop ]]; then echo $root; fi; done
+    
     if [[ -n $ostart || -n $ostop ]]; then
         echo "Skip ${root} (start=$ostart --- stop=$ostop)"
+        echo "Skip ${root} (start=$ostart --- stop=$ostop)" >> /tmp/grizli_run_all_synced.log
         continue
     fi
-        
+    
     # Check again in case done by another process
     start=`aws s3 ls s3://aws-grivam/Pipeline/Log/Start/${root}.log | awk '{print $4}'`
     extract=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/${root}.log | awk '{print $4}'`

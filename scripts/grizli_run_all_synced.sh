@@ -12,13 +12,16 @@ else
     maglim=$2
 fi
 
+date > /tmp/grizli_run_all_synced.log
+
 for root in $roots; do
     start=`aws s3 ls s3://aws-grivam/Pipeline/Log/Start/${root}.log | awk '{print $4}'`
     extract=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/${root}.log | awk '{print $4}'`
     stop=`aws s3 ls s3://aws-grivam/Pipeline/Log/Finished/${root}.log| awk '{print $4}'`
     
     if [[ -z $start && -z $stop ]]; then
-        echo "Run ${root}"
+        echo "Run ${root}" 
+        echo "Run ${root}" >> /tmp/grizli_run_all_synced.log
         grizli_extract_only.sh ${root} ${maglim}
     else
         aws s3 ls s3://aws-grivam/Pipeline/${root}/Extractions/ > /tmp/ext
@@ -26,6 +29,7 @@ for root in $roots; do
         full=`grep full.fits /tmp/ext | wc -l`    
     
         echo "Skip ${root} (start=$start extract=$extract  stop=$stop) ${beams} / ${full}"
+        echo "Skip ${root} (start=$start extract=$extract  stop=$stop) ${beams} / ${full}" >> /tmp/grizli_run_all_synced.log
     fi
 done
 

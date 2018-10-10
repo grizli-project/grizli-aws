@@ -4,6 +4,7 @@
 
 roots=`aws s3 ls s3://grizli-imaging/Pipeline/Fields/ | grep footprint.fits | awk '{print $4}' | sed "s/_footprint.fits//"`
 
+date > /tmp/imaging_run_all.log
 
 for root in $roots; do
     start=`aws s3 ls s3://grizli-imaging/Pipeline/Log/Start/${root}.log | awk '{print $4}'`
@@ -11,9 +12,11 @@ for root in $roots; do
     
     if [[ -z $start && -z $stop ]]; then
         echo "Run ${root}"
+        echo "Run ${root}" >> /tmp/imaging_run_all.log
         imaging_run_single.sh ${root} 
     else
         echo "Skip ${root} (start=$start stop=$stop)"
+        echo "Skip ${root} (start=$start stop=$stop)" >> /tmp/imaging_run_all.log
     fi
 done
 

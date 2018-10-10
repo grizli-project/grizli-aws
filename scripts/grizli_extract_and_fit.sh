@@ -24,8 +24,11 @@ fi
 echo "Running on root=${root} with maglim=${maglim}"
 
 # Clean up
-cd $HOME/GrizliExtract
-rm *GrismFL* *npy j[0-9]* *wcs*
+# sudo mkdir /GrizliImaging  (spectra)
+# sudo chmod ugoa+rwx /GrizliImaging
+
+rm -rf /GrizliSpectra/*
+cd /GrizliSpectra
 
 echo "Start:   `date`" > ${root}.log
 aws s3 cp ${root}.log s3://aws-grivam/Pipeline/Log/Start/

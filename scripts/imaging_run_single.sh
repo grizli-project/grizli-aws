@@ -18,11 +18,10 @@ root=$1
 echo "Running on root=${root}"
 
 # Initialize working directory
-rm -rf /tmp/GrizliExtract
-mkdir /tmp/GrizliExtract
-chmod ugoa+rwx /tmp/GrizliExtract
-
-cd /tmp/GrizliExtract
+rm -rf /GrizliImaging/*
+#mkdir /GrizliImaging
+#chmod ugoa+rwx /GrizliImaging
+cd /GrizliImaging
 
 echo "Start:   `date`" > ${root}.log
 aws s3 cp ${root}.log s3://grizli-imaging/Pipeline/Log/Start/
@@ -52,4 +51,4 @@ fi
 
 # Done
 
-cd /tmp/GrizliExtract
+cd /GrizliImaging

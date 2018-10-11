@@ -6,13 +6,32 @@ roots=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/ | awk '{print $4}' | sed 
 
 roots=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/ | awk '{print $4}' | sed "s/.log//" | grep -v j033 | grep -v beams` # Skip UDF
 
+aws s3 ls s3://aws-grivam/Pipeline/Log/ExtractStart/ > /tmp/grizli_started.log
+aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/ > /tmp/grizli_extracted.log
+aws s3 ls s3://aws-grivam/Pipeline/Log/Finished/ > /tmp/grizli_finished.log
+
 if [[ -z $1 ]]; then
     maglim="16.5,26"
 else
     maglim=$2
 fi
 
+date > /tmp/grizli_run_all_extracted.log
+
+
 for root in $roots; do
+    # Check from existing
+    ostart=`grep ${root}.log /tmp/grizli_started.log | awk '{print $4}'`
+    ostop=`grep ${root}.log /tmp/grizli_finished.log | awk '{print $4}'`
+    #if [[ -z $ostart && -z $ostop ]]; then echo $root; fi; done
+    
+    if [[ -n $ostart || -n $ostop ]]; then
+        echo "Skip ${root} (start=$ostart --- stop=$ostop)"
+        echo "Skip ${root} (start=$ostart --- stop=$ostop)" >> /tmp/grizli_run_all_extracted.log
+        continue
+    fi
+    
+    # Check again in case done by another process
     start=`aws s3 ls s3://aws-grivam/Pipeline/Log/ExtractStart/${root}.log | awk '{print $4}'`
     extract=`aws s3 ls s3://aws-grivam/Pipeline/Log/Extract/${root}.log | awk '{print $4}'`
     stop=`aws s3 ls s3://aws-grivam/Pipeline/Log/Finished/${root}.log| awk '{print $4}'`

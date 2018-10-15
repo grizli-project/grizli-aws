@@ -32,6 +32,8 @@ aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_footprint.fits ./
 ## Extractions
 preprocess_run_single.py ${root} 
 
+cd /GrizliImaging
+
 rm ${root}/Prep/*wcs-ref.fits
 rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log

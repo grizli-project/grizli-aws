@@ -37,9 +37,9 @@ rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}/Prep/*flc.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --acl public-read ./ s3://grizli-preprocess/Pipeline/
+aws s3 sync --exclude "*" --include "${root}/Prep/*flc.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fail*" --include "${root}/Prep/*visits.npy" --include "${root}/Prep/*fine*" --acl public-read ./ s3://grizli-preprocess/Pipeline/
 
-if [ -e ${root}/Prep/${root}_phot.fits ]; then 
+if [ -e ${root}/Prep/${root}_fine.png ]; then 
     echo "${root}: Success"
     echo "Finished:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-preprocess/Pipeline/Log/Finished/

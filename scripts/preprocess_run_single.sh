@@ -19,8 +19,8 @@ echo "Running on root=${root}"
 
 # Initialize working directory
 rm -rf /GrizliImaging/*
-#mkdir /GrizliImaging
-#chmod ugoa+rwx /GrizliImaging
+#sudo mkdir /GrizliImaging
+#sudo chmod ugoa+rwx /GrizliImaging
 cd /GrizliImaging
 
 echo "Start:   `date`" > ${root}.log
@@ -37,7 +37,7 @@ rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}/Prep/*flc.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fail*" --include "${root}/Prep/*visits.npy" --include "${root}/Prep/*_fine*" --acl public-read ./ s3://grizli-preprocess/Pipeline/
+aws s3 sync --exclude "*" --include "${root}/Prep/*flc.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fail*" --include "${root}/Prep/*visits.npy" --include "${root}/Prep/*_fine*" --include "${root}/Prep/*_dr?_sci.fits" --include "${root}/Prep/*cat.fits" --acl public-read ./ s3://grizli-preprocess/Pipeline/
 
 if [ -e ${root}/Prep/${root}_fine.png ]; then 
     echo "${root}: Success"

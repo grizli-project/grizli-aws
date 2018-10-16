@@ -28,7 +28,7 @@ def auto_run(root='j023507-040202'):
         fp.write('fk5\n')
     
         for weight_image in files:
-            root_i = '_dr'.join(file.split('_dr')[:-1])
+            root_i = '_dr'.join(weight_image.split('_dr')[:-1])
             reg = prep.drizzle_footprint(weight_image, shrink=10, ext=0,
                                          outfile=None, label=root_i) 
             fp.write(reg+'\n')

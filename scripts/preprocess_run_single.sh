@@ -39,16 +39,31 @@ rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}/Prep/*flc.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fail*" --include "${root}/Prep/*visits.npy" --include "${root}/Prep/*_fine*" --include "${root}/Prep/*_dr?_sci.fits" --include "${root}/Prep/*cat.fits" --acl public-read ./ s3://grizli-preprocess/Pipeline/
+aws s3 sync --exclude "*" --include "${root}/Prep/*flc.fits" \
+                          --include "${root}/Prep/*.log" \
+                          --include "${root}/Prep/*fail*" \
+                          --include "${root}/Prep/*visits.npy" \
+                          --include "${root}/Prep/*_fine*" \
+                          --include "${root}/Prep/*png" \
+                          --include "${root}/Prep/*_dr?_sci.fits" \
+                          --include "${root}/Prep/*cat.fits" \
+                          --include "${root}/Prep/*reg" \
+                          --include "${root}/Prep/*radec" \
+                          --acl public-read \
+                          ./ s3://grizli-preprocess/Pipeline/
 
-if [ -e ${root}/Prep/${root}_fine.png ]; then 
-    echo "${root}: Success"
+#if [ -e ${root}/Prep/${root}_fine.png ]; then 
+failed=`ls ${root}/Prep/ |grep fail`
+if [ -z "$failed" ] ; then 
+    echo "${root}: Success" 
     echo "Finished:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-preprocess/Pipeline/Log/Finished/
+    aws s3 rm s3://grizli-preprocess/Pipeline/Log/Failed/${root}.log
 else
     echo "${root}: Fail..."
     echo "Failed:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-preprocess/Pipeline/Log/Failed/
+    aws s3 rm s3://grizli-preprocess/Pipeline/Log/Finished/${root}.log
 fi
 
 # Done

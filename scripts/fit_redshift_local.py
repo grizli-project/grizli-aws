@@ -17,7 +17,7 @@ def fit_lambda(root='j100025+021706', newfunc=True):
         print(obj)
         event = {
               's3_object_path': obj,
-              'verbose':      "False",
+              'verbose':      "True",
               'skip_started': "True",
               'check_wcs' :   "False",
             }

@@ -82,6 +82,10 @@ def run_grizli_fit(event):
             fp.close()
             
             return True
+        else:
+            fp = open('/tmp/fit_redshift_single.log','a')
+            fp.write('{0}: {1} Run\n'.format(time.ctime(), beams_file))
+            fp.close()            
     else:
         fp = open('/tmp/fit_redshift_single.log','a')
         fp.write('{0}: {1} Run\n'.format(time.ctime(), beams_file))

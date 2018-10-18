@@ -151,7 +151,6 @@ def run_grizli_fit(event):
             bkt.upload_file(file, '{0}/{1}'.format(output_path, file), ExtraArgs={'ACL': 'public-read'})
         
     # Cleanup
-    os.remove('fit_args.npy')
     for file in files:
         os.remove(file)
             

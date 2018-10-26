@@ -55,13 +55,18 @@ def run_grizli_fit(event):
         output_path = event['output_path']
     else:
         output_path = None
-                        
+    
+    if 'bucket' in event:
+        event_bools['bucket'] = event['bucket']
+    else:
+        event_bools['bucket'] = 'aws-grivam'
+                            
     os.chdir('/tmp/')
     #os.system('cp {0}/matplotlibrc .'.format(grizli.GRIZLI_PATH))
     
     s3 = boto3.resource('s3')
     s3_client = boto3.client('s3')
-    bkt = s3.Bucket('aws-grivam')
+    bkt = s3.Bucket(event_bools['bucket'])
 
     beams_file = os.path.basename(event['s3_object_path'])
     root = beams_file.split('_')[0]

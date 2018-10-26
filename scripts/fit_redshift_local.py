@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-def fit_lambda(root='j100025+021706', newfunc=True):
+def fit_lambda(root='j100025+021706', newfunc=True, bucket_name='aws-grivam'):
     import time
     import os
     import numpy as np
@@ -9,7 +9,7 @@ def fit_lambda(root='j100025+021706', newfunc=True):
     from grizli_aws.fit_redshift_single import run_grizli_fit
     
     
-    beams, files = get_needed_paths(root)
+    beams, files = get_needed_paths(root, bucket_name=bucket_name)
     if len(beams) == 0:
         print('{0}: No beams to fit'.format(root))
         
@@ -20,6 +20,7 @@ def fit_lambda(root='j100025+021706', newfunc=True):
               'verbose':      "True",
               'skip_started': "True",
               'check_wcs' :   "False",
+              'bucket' : bucket_name
             }
         
         try:
@@ -30,7 +31,7 @@ def fit_lambda(root='j100025+021706', newfunc=True):
     # Status again to check products
     beams, files = get_needed_paths(root)
     
-def get_needed_paths(root, get_string=False):
+def get_needed_paths(root, get_string=False, bucket_name='aws-grivam'):
     """
     Get the S3 paths of the "beams.fits" files that still need to be fit.
     """
@@ -39,7 +40,7 @@ def get_needed_paths(root, get_string=False):
     
     s3 = boto3.resource('s3')
     s3_client = boto3.client('s3')
-    bkt = s3.Bucket('aws-grivam')
+    bkt = s3.Bucket(bucket_name)
     
     files = [obj.key for obj in bkt.objects.filter(Prefix='Pipeline/{0}/Extractions/'.format(root))]
 
@@ -93,5 +94,8 @@ if __name__ == "__main__":
     else:
         newfunc = False
         
-    fit_lambda(root=root, newfunc=newfunc)
+    bucket_name='aws-grivam'
+    bucket_name='grizli-grism'
+    
+    fit_lambda(root=root, newfunc=newfunc, bucket_name=bucket_name)
     

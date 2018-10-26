@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-def fit_lambda(root='j100025+021706', newfunc=True):
+def fit_lambda(root='j100025+021706', newfunc=True, bucket_name='aws-grivam'):
     import time
     import os
     import numpy as np
     import boto3
     import json
 
-    beams, files = get_needed_paths(root)
+    beams, files = get_needed_paths(root, bucket_name=bucket_name)
     if len(beams) == 0:
         print('{0}: No beams to fit'.format(root))
         
@@ -51,7 +51,10 @@ def fit_lambda(root='j100025+021706', newfunc=True):
         print(obj)
         event = {
               's3_object_path': obj,
-              'verbose': "False",
+              'verbose':      "False",
+              'skip_started': "True",
+              'check_wcs' :   "False",
+              'bucket': bucket_name,
             }
 
         # Invoke Lambda function
@@ -67,43 +70,54 @@ def fit_lambda(root='j100025+021706', newfunc=True):
     time.sleep(sleep_time)
     
     # Status again to check products
-    beams, files = get_needed_paths(root)
+    beams, files = get_needed_paths(root, bucket_name=bucket_name)
     
-def get_needed_paths(root):
+def get_needed_paths(root, get_string=False, bucket_name='aws-grivam'):
     """
     Get the S3 paths of the "beams.fits" files that still need to be fit.
     """
     import boto3
+    import time
     
     s3 = boto3.resource('s3')
     s3_client = boto3.client('s3')
-    bkt = s3.Bucket('aws-grivam')
+    bkt = s3.Bucket(bucket_name)
     
     files = [obj.key for obj in bkt.objects.filter(Prefix='Pipeline/{0}/Extractions/'.format(root))]
 
     beams = []
     logs = []
     full = []
-
+    start = []
+    
     for file in files:
         if 'beams.fits' in file:
             beams.append(file)
 
         if 'log_par' in file:
             logs.append(file)
-
+        
+        if 'start.log' in file:
+            start.append(file)
+        
         if 'full.fits' in file:
             full.append(file)
     
-    print('{3} / Nbeams: {0}, Nfull: {1}, Nlog: {2}'.format(len(beams), len(full), len(logs), root))
+    label = '{0} / {1} / Nbeams: {2}, Nfull: {3}, Nlog: {4}, Nstart: {5}'.format(root, time.ctime(), len(beams), len(full), len(logs), len(start))
+    if get_string:
+        return label
+        
+    print(label)
     
     for i in range(len(beams))[::-1]:
-        if  (beams[i].replace('.beams.fits', '.full.fits') in full):
+        test = (beams[i].replace('.beams.fits', '.full.fits') in full)
+        test |= (beams[i].replace('.beams.fits', '.start.log') in start)
+        if test:
             beams.pop(i)
-    
+
+        
     return beams, files
     
-
 if __name__ == "__main__":
     import sys
     import numpy as np
@@ -119,7 +133,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 3:
         newfunc = bool(sys.argv[2].lower() == 'true')
     else:
-        newfunc = True
+        newfunc = False
         
-    fit_lambda(root=root, newfunc=newfunc)
+    fit_lambda(root=root, newfunc=newfunc, bucket_name='grizli-grism')
     

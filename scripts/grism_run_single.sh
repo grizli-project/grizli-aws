@@ -28,16 +28,18 @@ aws s3 cp ${root}.log s3://grizli-grism/Pipeline/Log/Start/
 
 # Copy from S3
 aws s3 cp s3://grizli-grism/Pipeline/Fields/${root}_footprint.fits ./
+aws s3 cp s3://grizli-grism/Pipeline/Fields/${root}_master.radec ./
 
 ## Extractions
 grism_run_single.py ${root} 
 
 rm ${root}/Prep/*wcs-ref.fits
 rm ${root}/Prep/*bkg.fits
+rm ${root}/Prep/*ctx.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://grizli-grism/Pipeline/
+aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*flt.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://grizli-grism/Pipeline/
 
 if [ -e ${root}/Prep/${root}_phot.fits ]; then 
     echo "${root}: Success"

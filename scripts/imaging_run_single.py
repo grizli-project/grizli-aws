@@ -16,7 +16,7 @@ def auto_run(root='j023507-040202'):
     
     IS_PARALLEL = utils.column_string_operation(tab['proposal_pi'], 'alkan', method='count', logical='or').sum() > 0
         
-    auto_script.go(root=root, maglim=[19, 23], HOME_PATH=HOME_PATH, inspect_ramps=False, manual_alignment=False, is_parallel_field=IS_PARALLEL, reprocess_parallel=False, only_preprocess=True, run_extractions=True, run_fit=True, s3_sync=True, fine_radec=None, combine_all_filters=False, gaia_by_date=True, align_simple=False, align_clip=-1, master_radec=None, is_dash=False, run_parse_visits=True, reference_wcs_filters=['F160W','F140W','F125W','F105W','F110W','F098M','F814W','F850LP', 'F606W','F435W'])
+    auto_script.go(root=root, maglim=[19, 23], HOME_PATH=HOME_PATH, inspect_ramps=False, manual_alignment=False, is_parallel_field=IS_PARALLEL, reprocess_parallel=False, only_preprocess=True, run_extractions=False, run_fit=False, s3_sync='cp', fine_radec=None, combine_all_filters=False, gaia_by_date=True, align_simple=False, align_clip=-1, master_radec=None, is_dash=False, run_parse_visits=True, reference_wcs_filters=['F160W','F140W','F125W','F105W','F110W','F098M','F814W','F850LP', 'F606W','F435W'])
     
     plt.ioff()
     fig = auto_script.field_rgb(root=root, HOME_PATH=HOME_PATH, xsize=18)

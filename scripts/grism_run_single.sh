@@ -30,6 +30,7 @@ aws s3 rm s3://grizli-grism/Pipeline/Log/Failed/${root}.log
 # Copy from S3
 aws s3 cp s3://grizli-grism/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://grizli-grism/Pipeline/Fields/${root}_master.radec ./
+aws s3 cp s3://grizli-grism/Pipeline/Fields/${root}_parent.radec ./
 
 ## Extractions
 grism_run_single.py ${root} 

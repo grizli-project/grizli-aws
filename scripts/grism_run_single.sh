@@ -25,6 +25,7 @@ cd /GrizliImaging
 
 echo "Start:   `date`" > ${root}.log
 aws s3 cp ${root}.log s3://grizli-grism/Pipeline/Log/Start/
+aws s3 rm s3://grizli-grism/Pipeline/Log/Failed/${root}.log
 
 # Copy from S3
 aws s3 cp s3://grizli-grism/Pipeline/Fields/${root}_footprint.fits ./

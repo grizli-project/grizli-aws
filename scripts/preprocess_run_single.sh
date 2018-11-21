@@ -31,6 +31,9 @@ aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_parent.radec ./
 
+# For COSMOS
+aws s3 cp s3://grizli-preprocess/hsc-udeep-i25_corr_cosmos.radec ./
+
 ## Extractions
 preprocess_run_single.py ${root} 
 

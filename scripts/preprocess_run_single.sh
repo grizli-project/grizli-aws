@@ -28,6 +28,8 @@ aws s3 cp ${root}.log s3://grizli-preprocess/Pipeline/Log/Start/
 
 # Copy from S3
 aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_footprint.fits ./
+aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_master.radec ./
+aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_parent.radec ./
 
 ## Extractions
 preprocess_run_single.py ${root} 

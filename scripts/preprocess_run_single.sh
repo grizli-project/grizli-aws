@@ -39,7 +39,7 @@ rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}/Prep/*flc.fits" \
+aws s3 sync --exclude "*" --include "${root}/Prep/*fl?.fits" \
                           --include "${root}/Prep/*.log" \
                           --include "${root}/Prep/*fail*" \
                           --include "${root}/Prep/*visits.npy" \

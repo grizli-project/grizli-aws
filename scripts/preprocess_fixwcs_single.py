@@ -65,7 +65,7 @@ def auto_run(root='j023507-040202'):
                                 str('{0}_wcs.fits'.format(visit['product'])),
                                       xsh=out_shift[0], ysh=out_shift[1],
                                       rot=out_rot, scale=out_scale,
-                                      wcsname=ref_catalog, force=True,
+                                      wcsname='HSC', force=True,
                                       reusename=True, verbose=True,
                                       sciext='SCI')
         

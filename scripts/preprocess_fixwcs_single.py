@@ -17,7 +17,7 @@ def auto_run(root='j023507-040202'):
     
     # Something wrong with some files with bad shifts, reset wcs
     for visit in visits:
-        for file in files:
+        for file in visit['files']:
             updatewcs.updatewcs(file, verbose=True, use_db=False)
     
     # Redrizzle mosaics

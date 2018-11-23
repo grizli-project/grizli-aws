@@ -50,6 +50,7 @@ rm ${root}/Prep/*wcs-ref.fits
 rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
+
 # Sync extractions
 aws s3 sync --exclude "*" --include "Prep/[ij]*_fl?.fits" \
                           --include "Prep/u*_c??.fits" \
@@ -78,6 +79,10 @@ else
     echo "Failed:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-preprocess/FixWCS/Log/Failed/
     aws s3 rm s3://grizli-preprocess/FixWCS/Log/Finished/${root}.log
+    
+    # Remove fine files
+    aws s3 rm --recursive --exclude "*" --include "*fine.*" --include "FineBkup*" s3://grizli-preprocess/Pipeline/${root}/Prep/
+    
 fi
 
 # Done

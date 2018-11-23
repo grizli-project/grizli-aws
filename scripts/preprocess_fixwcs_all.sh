@@ -8,7 +8,7 @@ roots=`aws s3 ls s3://grizli-preprocess/Pipeline/Fields/ | grep footprint.fits |
 aws s3 ls s3://grizli-preprocess/FixWCS/Log/Start/ > /tmp/grizli_started.log
 aws s3 ls s3://grizli-preprocess/FixWCS/Log/Finished/ > /tmp/grizli_finished.log
 
-date > /tmp/preprocess_run_all.log
+date > /tmp/preprocess_fixwcs_all.log
 
 for root in $roots; do
     
@@ -18,7 +18,7 @@ for root in $roots; do
     
     if [[ -n $ostart || -n $ostop ]]; then
         echo "Skip ${root} (start=$ostart --- stop=$ostop)"
-        echo "Skip ${root} (start=$ostart --- stop=$ostop)" >> /tmp/preprocess_run_all.log
+        echo "Skip ${root} (start=$ostart --- stop=$ostop)" >> /tmp/preprocess_fixwcs_all.log
         continue
     fi
     
@@ -27,11 +27,11 @@ for root in $roots; do
     
     if [[ -z $start && -z $stop ]]; then
         echo "Run ${root}"
-        echo "Run ${root}" >> /tmp/preprocess_run_all.log
-        preprocess_run_single.sh ${root} 
+        echo "Run ${root}" >> /tmp/preprocess_fixwcs_all.log
+        preprocess_fixwcs_single.sh ${root} 
     else
         echo "Skip ${root} (start=$start stop=$stop)"
-        echo "Skip ${root} (start=$start stop=$stop)" >> /tmp/preprocess_run_all.log
+        echo "Skip ${root} (start=$start stop=$stop)" >> /tmp/preprocess_fixwcs_all.log
     fi
 done
 

@@ -36,7 +36,7 @@ aws s3 cp s3://grizli-preprocess/hsc-udeep-i25_corr_cosmos.radec ./
 
 # Sync entire directory
 mkdir ${root}
-aws s3 cp --exclude "Prep/FineBkup*" s3://grizli-preprocess/Pipeline/${root} ./${root}
+aws s3 sync --exclude "Prep/FineBkup*" s3://grizli-preprocess/Pipeline/${root} ./${root}
 rm ${root}/Prep/*fail*
 rm -rf ${root}/Prep/*fine.* ${root}/Prep/FineBk*
 

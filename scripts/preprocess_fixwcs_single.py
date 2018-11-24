@@ -49,7 +49,9 @@ def auto_run(root='j023507-040202'):
         radec = parent_radec
     else:
         radec = hsc
-        
+     
+    print('master RADEC file: ', radec)
+       
     thresh = 2.5
     for visit in visits:
         # Remake catalogs

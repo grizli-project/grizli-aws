@@ -58,7 +58,7 @@ def auto_run(root='j023507-040202'):
         cat = prep.make_SEP_catalog(root=visit['product'], threshold=thresh)
         
         # Redo alignment
-        result = prep.align_drizzled_image(root=visit['product'], radec='../../hsc-udeep-i25_corr_cosmos.radec', mag_limits=[19,23], simple=False, max_err_percentile=80, clip=120, outlier_threshold=5)
+        result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=[19,23], simple=False, max_err_percentile=80, clip=120, outlier_threshold=5)
         
         orig_wcs, drz_wcs, out_shift, out_rot, out_scale = result
         

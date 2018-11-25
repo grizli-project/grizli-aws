@@ -6,6 +6,8 @@ def auto_run(root='j023507-040202'):
     import numpy as np
     
     import astropy.io.fits as pyfits
+    import astropy.wcs as pywcs
+    
     from drizzlepac import updatehdr
     from stwcs import updatewcs
     
@@ -20,7 +22,18 @@ def auto_run(root='j023507-040202'):
         for file in visit['files']:
             utils.fetch_hst_calibs(file, calib_types=['IDCTAB','NPOLFILE','IMPHTTAB'])
             updatewcs.updatewcs(file, verbose=True, use_db=False)
-    
+        
+        # Apply shifts
+        sh = utils.read_catalog('{0}_shifts.log'.format(visit['product']))
+        flt0 = pyfits.open(sh['flt'][0])
+        wcs_ref = pywcs.WCS(flt0['SCI',1].header, fobj=flt0, relax=True)
+        shift_dict = {}
+        for i in range(len(sh)):
+            shift_dict[sh['flt'][i]] = [sh['xshift'][i], sh['yshift'][i]]
+            
+        prep.apply_tweak_shifts(wcs_ref, shift_dict, grism_matches={},
+                                verbose=False)
+                                  
     # Redrizzle mosaics
     prep.drizzle_overlaps(visits, check_overlaps=False, skysub=False,
                           static=False, pixfrac=0.8, scale=None, 

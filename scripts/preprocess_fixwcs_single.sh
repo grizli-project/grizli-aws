@@ -42,7 +42,6 @@ rm -rf ${root}/Prep/*fine.* ${root}/Prep/FineBk*
 
 ## Run the fix script
 cd /GrizliImaging/${root}/Prep/
-rm *.fail* *_fail*
 preprocess_fixwcs_single.py ${root} 
 
 cd /GrizliImaging

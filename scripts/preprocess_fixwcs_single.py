@@ -24,15 +24,17 @@ def auto_run(root='j023507-040202'):
             updatewcs.updatewcs(file, verbose=True, use_db=False)
         
         # Apply shifts
-        sh = utils.read_catalog('{0}_shifts.log'.format(visit['product']))
-        flt0 = pyfits.open(sh['flt'][0])
-        wcs_ref = pywcs.WCS(flt0['SCI',1].header, fobj=flt0, relax=True)
-        shift_dict = {}
-        for i in range(len(sh)):
-            shift_dict[sh['flt'][i]] = [sh['xshift'][i], sh['yshift'][i]]
+        shift_log = '{0}_shifts.log'.format(visit['product'])
+        if os.path.exists(shift_log):
+            sh = utils.read_catalog(shift_log)
+            flt0 = pyfits.open(sh['flt'][0])
+            wcs_ref = pywcs.WCS(flt0['SCI',1].header, fobj=flt0, relax=True)
+            shift_dict = {}
+            for i in range(len(sh)):
+                shift_dict[sh['flt'][i]] = [sh['xshift'][i], sh['yshift'][i]]
             
-        prep.apply_tweak_shifts(wcs_ref, shift_dict, grism_matches={},
-                                verbose=False)
+            prep.apply_tweak_shifts(wcs_ref, shift_dict, grism_matches={},
+                                    verbose=False)
                                   
     # Redrizzle mosaics
     prep.drizzle_overlaps(visits, check_overlaps=False, skysub=False,

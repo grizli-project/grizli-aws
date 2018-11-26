@@ -178,12 +178,12 @@ if __name__ == "__main__":
     utils.set_warnings()
             
     root = sys.argv[1]
-    auto_run(root=root) 
+    #auto_run(root=root) 
     
-    # try:
-    #     auto_run(root=root) 
-    # except:
-    #     fp = open('{0}.failed'.format(root),'w')
-    #     fp.write(time.ctime()+'\n')
-    #     fp.close()
+    try:
+        auto_run(root=root) 
+    except:
+        fp = open('{0}.failed'.format(root),'w')
+        fp.write(time.ctime()+'\n')
+        fp.close()
         

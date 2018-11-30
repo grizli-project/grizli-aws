@@ -44,18 +44,20 @@ rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}/Prep/*fl?.fits" \
-                          --include "${root}/Prep/*.log" \
-                          --include "${root}/Prep/*fail*" \
-                          --include "${root}/Prep/*visits.npy" \
-                          --include "${root}/Prep/*_fine*" \
-                          --include "${root}/Prep/*png" \
-                          --include "${root}/Prep/*_dr?_sci.fits" \
-                          --include "${root}/Prep/*cat.fits" \
-                          --include "${root}/Prep/*reg" \
-                          --include "${root}/Prep/*radec" \
+aws s3 sync --exclude "*" --include "Prep/[ij]*_fl?.fits" \
+                          --include "Prep/u*_c??.fits" \
+                          --include "Prep/*.log" \
+                          --include "Prep/*wcs.fits" \
+                          --include "Prep/*fail*" \
+                          --include "Prep/*visits.npy" \
+                          --include "Prep/*_fine*" \
+                          --include "Prep/*png" \
+                          --include "Prep/*_dr?_sci.fits" \
+                          --include "Prep/*cat.fits" \
+                          --include "Prep/*reg" \
+                          --include "Prep/*radec" \
                           --acl public-read \
-                          ./ s3://grizli-preprocess/Pipeline/
+                          ./${root} s3://grizli-preprocess/Pipeline/${root}
 
 #if [ -e ${root}/Prep/${root}_fine.png ]; then 
 failed=`ls ${root}/Prep/ |grep fail`

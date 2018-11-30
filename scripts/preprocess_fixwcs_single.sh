@@ -49,7 +49,7 @@ cd /GrizliImaging
 rm ${root}/Prep/*wcs-ref.fits
 rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
-
+rm ${root}/Prep/stwcs.log
 
 # Sync extractions
 aws s3 sync --exclude "*" --include "Prep/[ij]*_fl?.fits" \

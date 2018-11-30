@@ -37,7 +37,7 @@ rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 
 # Sync extractions
-aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://grizli-imaging/Pipeline/
+aws s3 sync --exclude "*" --include "Prep/${root}*" --include "Prep/*.log" --include "Prep/*fine*" --include "Extractions/*" --acl public-read ./${root} s3://grizli-imaging/Pipeline/${root}
 
 if [ -e ${root}/Prep/${root}_phot.fits ]; then 
     echo "${root}: Success"

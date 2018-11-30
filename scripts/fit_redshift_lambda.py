@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-def fit_lambda(root='j100025+021706', newfunc=True, bucket_name='aws-grivam'):
+def fit_lambda(root='j100025+021706', newfunc=True, bucket_name='aws-grivam', skip_existing=True):
     import time
     import os
     import numpy as np
     import boto3
     import json
 
-    beams, files = get_needed_paths(root, bucket_name=bucket_name)
+    beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=skip_existing)
     if len(beams) == 0:
         print('{0}: No beams to fit'.format(root))
         
@@ -70,9 +70,9 @@ def fit_lambda(root='j100025+021706', newfunc=True, bucket_name='aws-grivam'):
     time.sleep(sleep_time)
     
     # Status again to check products
-    beams, files = get_needed_paths(root, bucket_name=bucket_name)
+    beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=False)
     
-def get_needed_paths(root, get_string=False, bucket_name='aws-grivam'):
+def get_needed_paths(root, get_string=False, bucket_name='aws-grivam', skip_existing=True):
     """
     Get the S3 paths of the "beams.fits" files that still need to be fit.
     """
@@ -112,7 +112,7 @@ def get_needed_paths(root, get_string=False, bucket_name='aws-grivam'):
     for i in range(len(beams))[::-1]:
         test = (beams[i].replace('.beams.fits', '.full.fits') in full)
         test |= (beams[i].replace('.beams.fits', '.start.log') in start)
-        if test:
+        if test & skip_existing:
             beams.pop(i)
 
         
@@ -135,5 +135,5 @@ if __name__ == "__main__":
     else:
         newfunc = False
         
-    fit_lambda(root=root, newfunc=newfunc, bucket_name='grizli-grism')
+    fit_lambda(root=root, newfunc=newfunc, bucket_name='grizli-grism', skip_existing=False)
     

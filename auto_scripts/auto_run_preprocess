@@ -1,0 +1,6 @@
+#!/bin/bash
+
+source /home/ec2-user/.bashrc
+
+# Grizli run all imaging, grizli-aws
+preprocess_run_all.sh

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+source /home/ec2-user/.bashrc
+
+# Grizli run all imaging, grizli-aws
+fit_redshift_local.py $1

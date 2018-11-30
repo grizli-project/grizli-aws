@@ -10,11 +10,20 @@ def run_check(check_root='GrizliPrep', query='./j*/Prep/*phot.fits'):
     
     qfiles = glob.glob(query)
     
-    checked = [line.strip() for line in open(check_root+'Passed.log').readlines()]
-    failed = [line.strip() for line in open(check_root+'Failed.log').readlines()]
+    try:
+        checked = [line.strip() for line in open(check_root+'Passed.log').readlines()]
+    except:
+        checked = []
     
+    try:
+        failed = [line.strip() for line in open(check_root+'Failed.log').readlines()]
+    except:
+        failed = []
+        
     for file in qfiles:
-        root=os.path.basename(file)[:14]
+        #root=os.path.basename(file)[:14]
+        root=os.path.basename(file).split('_phot')[0]#[:14]
+        
         if root in checked:
             print('Already checked: {0}'.format(root))
             continue

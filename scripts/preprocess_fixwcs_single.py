@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-def auto_run(root='j023507-040202'):
+def auto_run(root='j023507-040202', flag_global_crs=False):
     
     import os
     import glob
@@ -50,15 +50,19 @@ def auto_run(root='j023507-040202'):
     if not os.path.exists(master_radec):
         master_radec = None
     
+    ref_catalog = 'USER'
+    
     if root.startswith('cos-'):
         hsc = '{0}/../../{1}'.format(os.getcwd(), 'hsc-udeep-i25_corr_cosmos.radec')
         if os.path.exists(hsc):
                 master_radec = hsc
+                ref_catalog = 'HSC'
 
     elif root.startswith('uds-'):
         hsc = '{0}/../../{1}'.format(os.getcwd(), 'hsc-udeep-sxds_corr_uds.radec')
         if os.path.exists(hsc):
                 master_radec = hsc
+                ref_catalog = 'HSC'
         
     parent_radec = '{0}/../../{1}_parent.radec'.format(os.getcwd(), root)
     if not os.path.exists(parent_radec):
@@ -70,7 +74,12 @@ def auto_run(root='j023507-040202'):
         radec = parent_radec
     else:
         radec = None
-     
+    
+    if radec is None:
+        needs_gaia = True
+    else:
+        needs_gaia = False
+        
     print('master RADEC file: ', radec)
        
     thresh = 2.5
@@ -78,9 +87,20 @@ def auto_run(root='j023507-040202'):
         # Remake catalogs
         cat = prep.make_SEP_catalog(root=visit['product'], threshold=thresh)
         
+        # Generate GAIA alignment catalog at the observation epoch
+        if needs_gaia:
+            flt = pyfits.open(visit['files'][0])
+            h = flt['SCI',1].header
+            ra_i, dec_i = h['CRVAL1'], h['CRVAL2']
+            radec, ref_catalog = get_radec_catalog(ra=ra_i, dec=dec_i, 
+                    product=visit['product'],  
+                    date=flt[0].header['EXPSTART'], date_format='mjd',
+                    reference_catalogs=['GAIA'], radius=5.)
+            flt.close()
+                        
         # Redo alignment
         try:
-            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=[19,23], simple=False, max_err_percentile=80, clip=120, outlier_threshold=5)
+            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=[19,23], simple=False, max_err_percentile=80, clip=120, outlier_threshold=5, rms_limit=2.5)
         except:
             continue
             
@@ -92,7 +112,7 @@ def auto_run(root='j023507-040202'):
                                 str('{0}_wcs.fits'.format(visit['product'])),
                                       xsh=out_shift[0], ysh=out_shift[1],
                                       rot=out_rot, scale=out_scale,
-                                      wcsname='HSC', force=True,
+                                      wcsname=ref_catalog, force=True,
                                       reusename=True, verbose=True,
                                       sciext='SCI')
         
@@ -116,6 +136,10 @@ def auto_run(root='j023507-040202'):
     v = auto_script.get_visit_exposure_footprints(visit_file=visit_file,   
                              check_paths=['./', '../RAW'], simplify=1.e-6)
     
+    if flag_global_crs:
+        # Assume everything at same orient
+        pass
+        
     if False:
         # Mosaic
         auto_script.drizzle_overlaps(root, filters=['F160W'], 

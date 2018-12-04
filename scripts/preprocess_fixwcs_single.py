@@ -92,7 +92,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             flt = pyfits.open(visit['files'][0])
             h = flt['SCI',1].header
             ra_i, dec_i = h['CRVAL1'], h['CRVAL2']
-            radec, ref_catalog = get_radec_catalog(ra=ra_i, dec=dec_i, 
+            radec, ref_catalog = prep.get_radec_catalog(ra=ra_i, dec=dec_i, 
                     product=visit['product'],  
                     date=flt[0].header['EXPSTART'], date_format='mjd',
                     reference_catalogs=['GAIA'], radius=5.)

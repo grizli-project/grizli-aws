@@ -33,6 +33,8 @@ aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_parent.radec ./
 
 # For COSMOS
 aws s3 cp s3://grizli-preprocess/hsc-udeep-i25_corr_cosmos.radec ./
+# For UDS
+aws s3 cp s3://grizli-preprocess/hsc-udeep-sxds_corr_uds.radec ./
 
 # Sync entire directory
 mkdir ${root}

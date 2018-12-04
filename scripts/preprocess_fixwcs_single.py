@@ -46,14 +46,20 @@ def auto_run(root='j023507-040202'):
     
     # Radec
     master_radec = '{0}/../../{1}_master.radec'.format(os.getcwd(), root)
-    hsc = '{0}/../../{1}'.format(os.getcwd(), 'hsc-udeep-i25_corr_cosmos.radec')
     
     if not os.path.exists(master_radec):
-        if root.startswith('cos-') & os.path.exists(hsc):
-            master_radec = hsc
-        else:
-            master_radec = None
+        master_radec = None
     
+    if root.startswith('cos-'):
+        hsc = '{0}/../../{1}'.format(os.getcwd(), 'hsc-udeep-i25_corr_cosmos.radec')
+        if os.path.exists(hsc):
+                master_radec = hsc
+
+    elif root.startswith('uds-'):
+        hsc = '{0}/../../{1}'.format(os.getcwd(), 'hsc-udeep-sxds_corr_uds.radec')
+        if os.path.exists(hsc):
+                master_radec = hsc
+        
     parent_radec = '{0}/../../{1}_parent.radec'.format(os.getcwd(), root)
     if not os.path.exists(parent_radec):
         parent_radec = None
@@ -63,7 +69,7 @@ def auto_run(root='j023507-040202'):
     elif parent_radec is not None:
         radec = parent_radec
     else:
-        radec = hsc
+        radec = None
      
     print('master RADEC file: ', radec)
        

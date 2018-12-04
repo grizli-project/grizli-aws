@@ -56,25 +56,25 @@ rm ${root}/Prep/stwcs.log
 # Remove old failed files
 aws s3 rm --recursive --exclude "*" --include "*failed" s3://grizli-preprocess/Pipeline/${root}/
 
-# Sync extractions
-aws s3 sync --exclude "*" --include "Prep/[ij]*_fl?.fits" \
-                          --include "Prep/u*_c??.fits" \
-                          --include "Prep/*.log" \
-                          --include "Prep/*wcs.fits" \
-                          --include "Prep/*fail*" \
-                          --include "Prep/*visits.npy" \
-                          --include "Prep/*_fine*" \
-                          --include "Prep/*png" \
-                          --include "Prep/*_dr?_sci.fits" \
-                          --include "Prep/*cat.fits" \
-                          --include "Prep/*reg" \
-                          --include "Prep/*radec" \
-                          --acl public-read \
-                          ./${root} s3://grizli-preprocess/Pipeline/${root}
-
 #if [ -e ${root}/Prep/${root}_fine.png ]; then 
 failed=`ls ${root}/Prep/ |grep fail`
 if [ -z "$failed" ] ; then 
+    # Sync extractions
+    aws s3 sync --exclude "*" --include "Prep/[ij]*_fl?.fits" \
+                              --include "Prep/u*_c??.fits" \
+                              --include "Prep/*.log" \
+                              --include "Prep/*wcs.fits" \
+                              --include "Prep/*fail*" \
+                              --include "Prep/*visits.npy" \
+                              --include "Prep/*_fine*" \
+                              --include "Prep/*png" \
+                              --include "Prep/*_dr?_sci.fits" \
+                              --include "Prep/*cat.fits" \
+                              --include "Prep/*reg" \
+                              --include "Prep/*radec" \
+                              --acl public-read \
+                              ./${root} s3://grizli-preprocess/Pipeline/${root}
+
     echo "${root}: Success" 
     echo "Finished:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-preprocess/FixWCS/Log/Finished/

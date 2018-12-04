@@ -39,7 +39,8 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
     # Redrizzle mosaics
     prep.drizzle_overlaps(visits, check_overlaps=False, skysub=False,
                           static=False, pixfrac=0.8, scale=None, 
-                          final_wcs=False, fetch_flats=False, final_rot=None)
+                          final_wcs=False, fetch_flats=False, final_rot=None,
+                          include_saturated=True)
     
     ####### Alignment
     os.system('rm *wcs.*')

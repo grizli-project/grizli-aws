@@ -112,7 +112,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
         try:
             result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=mag_limits, simple=False, max_err_percentile=80, clip=120, outlier_threshold=5, rms_limit=2.5, triangle_size_limit=triangle_size_limit)
         except:
-            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=mag_limits, simple=False, max_err_percentile=80, clip=120, outlier_threshold=12, rms_limit=2.5, triangle_size_limit=triangle_size_limit)
+            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=mag_limits, simple=True, max_err_percentile=80, clip=120, outlier_threshold=12, rms_limit=2.5, triangle_size_limit=triangle_size_limit)
 
             #continue
             

@@ -53,6 +53,9 @@ rm ${root}/Prep/*bkg.fits
 rm ${root}/Prep/astrodrizzle.log
 rm ${root}/Prep/stwcs.log
 
+# Remove old failed files
+aws s3 rm --recursive --exclude "*" --include "*failed" s3://grizli-preprocess/Pipeline/${root}/
+
 # Sync extractions
 aws s3 sync --exclude "*" --include "Prep/[ij]*_fl?.fits" \
                           --include "Prep/u*_c??.fits" \

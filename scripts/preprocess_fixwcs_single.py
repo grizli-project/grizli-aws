@@ -98,10 +98,13 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
                     date=flt[0].header['EXPSTART'], date_format='mjd',
                     reference_catalogs=['GAIA'], radius=5.)
             flt.close()
-                        
+            mag_limits = [16,20]
+        else:
+            mag_limits = [19,23]
+                     
         # Redo alignment
         try:
-            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=[19,23], simple=False, max_err_percentile=80, clip=120, outlier_threshold=5, rms_limit=2.5)
+            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=mag_limits, simple=False, max_err_percentile=80, clip=120, outlier_threshold=5, rms_limit=2.5)
         except:
             continue
             

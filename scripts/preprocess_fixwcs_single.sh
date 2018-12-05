@@ -18,7 +18,7 @@ root=$1
 echo "Running on root=${root}"
 
 # Initialize working directory
-rm -rf /GrizliImaging/*
+rm -rf /GrizliImaging/${root}*
 #sudo mkdir /GrizliImaging
 #sudo chmod ugoa+rwx /GrizliImaging
 cd /GrizliImaging

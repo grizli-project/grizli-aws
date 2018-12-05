@@ -81,7 +81,10 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
         needs_gaia = True
     else:
         needs_gaia = False
-        
+    
+    REFERENCE = 'GAIA'
+    REFERENCE = 'PS1'
+     
     print('master RADEC file: ', radec)
        
     thresh = 2.5
@@ -97,7 +100,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             radec, ref_catalog = prep.get_radec_catalog(ra=ra_i, dec=dec_i, 
                     product=visit['product'],  
                     date=flt[0].header['EXPSTART'], date_format='mjd',
-                    reference_catalogs=['GAIA'], radius=5.)
+                    reference_catalogs=[REFERENCE], radius=5.)
             flt.close()
             mag_limits = [16,20]
             

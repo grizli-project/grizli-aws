@@ -96,6 +96,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             os.remove(file)
             
         # Generate GAIA alignment catalog at the observation epoch
+        clip = 120
         if needs_gaia:
             flt = pyfits.open(visit['files'][0])
             h = flt['SCI',1].header
@@ -108,7 +109,8 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             if REFERENCE == 'GAIA':
                 mag_limits = [16,20]
             else:
-                mag_limits = [19,21]
+                mag_limits = [19,22]
+                clip = 50
                 
             if '_flc' in visit['files'][0]:
                 triangle_size_limit=[5, 4000*np.sqrt(2)]
@@ -123,7 +125,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             
         # Redo alignment
         try:
-            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=mag_limits, simple=False, max_err_percentile=80, clip=120, outlier_threshold=5, rms_limit=2.5, triangle_size_limit=triangle_size_limit)
+            result = prep.align_drizzled_image(root=visit['product'], radec=radec, mag_limits=mag_limits, simple=False, max_err_percentile=80, clip=clip, outlier_threshold=5, rms_limit=2.5, triangle_size_limit=triangle_size_limit)
         except:
             print('First align failed!  Relax parameters')
             try:

@@ -37,9 +37,9 @@ def auto_run(root='j023507-040202'):
     
     # MACS0717
     if 'macs0717' in root:
-        catalogs = ['GAIA','PS1']
+        catalogs = ['GAIA', 'PS1']
     
-    run_fine_alignment=True
+    run_fine_alignment=False
         
     auto_script.go(root=root, maglim=[19, 23], HOME_PATH=HOME_PATH, 
                    inspect_ramps=False, manual_alignment=False, 

@@ -89,9 +89,12 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
        
     thresh = 2.5
     for visit in visits:
-        # Remake catalogs
-        cat = prep.make_SEP_catalog(root=visit['product'], threshold=thresh)
         
+        # Clean catalogs
+        files = glob.glob('{0}.*'.format(visit['product']))
+        for file in files: 
+            os.remove(file)
+            
         # Generate GAIA alignment catalog at the observation epoch
         if needs_gaia:
             flt = pyfits.open(visit['files'][0])
@@ -102,8 +105,11 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
                     date=flt[0].header['EXPSTART'], date_format='mjd',
                     reference_catalogs=[REFERENCE], radius=5.)
             flt.close()
-            mag_limits = [16,20]
-            
+            if REFERENCE == 'GAIA':
+                mag_limits = [16,20]
+            else:
+                mag_limits = [19,23]
+                
             if '_flc' in visit['files'][0]:
                 triangle_size_limit=[5, 4000*np.sqrt(2)]
             else:
@@ -111,6 +117,9 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
         else:
             mag_limits = [19,23]
             triangle_size_limit=[5, 1800]
+
+        # Remake catalogs
+        cat = prep.make_SEP_catalog(root=visit['product'], threshold=thresh)
             
         # Redo alignment
         try:

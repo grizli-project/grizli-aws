@@ -66,6 +66,9 @@ if [ -z "$failed" ] ; then
     echo "Finished:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://grizli-preprocess/Pipeline/Log/Finished/
     aws s3 rm s3://grizli-preprocess/Pipeline/Log/Failed/${root}.log
+    
+    # Clean results
+    rm -rf /GrizliImaging/${root}*
 else
     echo "${root}: Fail..."
     echo "Failed:   `date`" > ${root}.log

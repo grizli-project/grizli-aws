@@ -97,6 +97,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             
         # Generate GAIA alignment catalog at the observation epoch
         clip = 120
+        clip = -1
         if needs_gaia:
             flt = pyfits.open(visit['files'][0])
             h = flt['SCI',1].header
@@ -109,8 +110,8 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             if REFERENCE == 'GAIA':
                 mag_limits = [16,20]
             else:
-                mag_limits = [19,22]
-                clip = 50
+                mag_limits = [18,22]
+                #clip = 50
                 
             if '_flc' in visit['files'][0]:
                 triangle_size_limit=[5, 4000*np.sqrt(2)]
@@ -118,7 +119,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
                 triangle_size_limit=[5, 1300]
         else:
             mag_limits = [19,23]
-            triangle_size_limit=[5, 1800]
+            triangle_size_limit=[5, 1300]
 
         # Remake catalogs
         cat = prep.make_SEP_catalog(root=visit['product'], threshold=thresh)

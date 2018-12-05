@@ -108,12 +108,12 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
             if REFERENCE == 'GAIA':
                 mag_limits = [16,20]
             else:
-                mag_limits = [19,23]
+                mag_limits = [19,22]
                 
             if '_flc' in visit['files'][0]:
                 triangle_size_limit=[5, 4000*np.sqrt(2)]
             else:
-                triangle_size_limit=[5, 1800]
+                triangle_size_limit=[5, 1300]
         else:
             mag_limits = [19,23]
             triangle_size_limit=[5, 1800]

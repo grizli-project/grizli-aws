@@ -44,13 +44,14 @@ def auto_run(root='j023507-040202'):
     
     run_fine_alignment=False
         
-    auto_script.go(root=root, maglim=[19, 23], HOME_PATH=HOME_PATH, 
+    auto_script.go(root=root, maglim=[16, 23], HOME_PATH=HOME_PATH, 
                    inspect_ramps=False, manual_alignment=False, 
                    is_parallel_field=IS_PARALLEL, reprocess_parallel=True, 
                    only_preprocess=True, run_extractions=True, run_fit=False, 
                    s3_sync='cp', catalogs=catalogs,
                    fine_radec=None, run_fine_alignment=run_fine_alignment, 
                    combine_all_filters=False, 
+                   align_mag_limits=[16,24],
                    gaia_by_date=True, align_simple=False, align_clip=120, 
                    master_radec=master_radec, parent_radec=parent_radec, 
                    is_dash=IS_DASH, run_parse_visits=True, 

@@ -56,6 +56,7 @@ aws s3 sync --exclude "*" --include "Prep/[ij]*_fl?.fits" \
                           --include "Prep/*cat.fits" \
                           --include "Prep/*reg" \
                           --include "Prep/*radec" \
+                          --include "RAW/*png" \
                           --acl public-read \
                           ./${root} s3://grizli-preprocess/Pipeline/${root}
 

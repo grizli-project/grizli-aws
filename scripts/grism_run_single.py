@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
 def auto_run(root='j023507-040202'):
+    import os
+    from grizli import utils
+    utils.set_warnings()
+    from grizli.pipeline import auto_script
     
     params = {
     # Preprocessing flags         

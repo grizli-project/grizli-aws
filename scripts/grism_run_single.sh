@@ -51,6 +51,12 @@ rm -rf ${root}/Prep/FineBkup
 
 cp ${root}.auto_script.log ./${root}/Prep/
 
+echo "gzip mosaics"
+
+gzip ${root}/Prep/${root}*_dr?_*fits
+gzip ${root}/Prep/${root}*_seg.fits
+gzip ${root}/Extractions/*grism*fits
+
 # Sync extractions
 #aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*flt.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://${BUCKET}/Pipeline/
 

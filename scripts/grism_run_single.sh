@@ -36,8 +36,8 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
 
-aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
-rm -rf ./${root}/Prep/*fail*
+# aws s3 sync s3://${BUCKET}/Pipeline/${root} ./
+# rm -rf ./${root}/Prep/*fail*
 aws s3 rm --recursive --exclude "*" --include "*fail*" s3://${BUCKET}/Pipeline/${root}/Prep/
 
 ## Extractions

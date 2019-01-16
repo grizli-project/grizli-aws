@@ -33,7 +33,7 @@ def auto_run(root='j023507-040202'):
     'master_radec': None,    # Force reference
     'parent_radec': None,    # Reference to use if no HST overlaps
 
-    'run_fine_alignment': True, # Run Fine alignment script
+    'run_fine_alignment': False, # Run Fine alignment script
     'fine_radec': None,         # Fine alingment reference,  else GAIA
 
     # Image Mosaics                   

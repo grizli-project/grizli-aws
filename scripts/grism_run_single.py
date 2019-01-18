@@ -68,6 +68,11 @@ def auto_run(root='j023507-040202'):
     params['parent_radec'] = parent_radec
     params['master_radec'] = master_radec
     
+    # Limited filters
+    params['only_preprocess'] = False
+    params['filters'] = auto_script.IR_W_FILTERS + auto_script.IR_GRISMS
+    params['filters'] += ['F814W', 'F850LP', 'F777W']
+    
     params['is_parallel_field'] = IS_PARALLEL
     params['mosaic_pixel_scale'] = 0.06+0.02*params['is_parallel_field']
     params['mosaic_pixfrac'] = params['mosaic_pixel_scale']/0.12

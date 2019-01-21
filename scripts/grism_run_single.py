@@ -77,6 +77,12 @@ def auto_run(root='j023507-040202', args=[]):
     params['mosaic_pixel_scale'] = 0.06+0.02*params['is_parallel_field']
     params['mosaic_pixfrac'] = params['mosaic_pixel_scale']/0.12
     
+    # Try less aggressive background if CLASH
+    IS_BRIGHT_CLUSTER = utils.column_string_operation(tab['proposal_pi'], ['Postman', 'Lotz'], method='count', logical='or').sum() > 0
+    if IS_BRIGHT_CLUSTER:
+        params['imaging_bkg_params']: {'bh': 256, 'bw': 256, 'fh': 3, 'fw': 3,
+                       'pixel_scale': 0.128}, # Imaging background 
+    
     # Command line arguments
     if args:
         for arg in args:

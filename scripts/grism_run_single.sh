@@ -37,7 +37,21 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
 
 if [ "$2" == "-sync" ]; then
-    aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
+    #aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
+    aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
+    
+    rm ./${root}/Prep/${root}_phot.fits
+    rm ./${root}/Prep/${root}-ir*
+    
+    # Symlinks to force skip already complete
+    files=`ls ./${root}/Prep/*wcs.log | sed "s/_wcs.log/_drz_sci.fits/"`
+    for file in $files; do 
+        touch $file
+    done
+    
+    mkdir ${root}/Persistence
+    mkdir ${root}/Extractions
+    
     gunzip ${root}/Prep/*fits.gz
 fi
 

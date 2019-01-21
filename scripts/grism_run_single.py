@@ -71,6 +71,7 @@ def auto_run(root='j023507-040202', args=[]):
     # Limited filters
     params['only_preprocess'] = False
     params['filters'] = auto_script.IR_W_FILTERS + auto_script.IR_GRISMS
+    params['filters'] += auto_script.IR_M_FILTERS
     params['filters'] += ['F814W', 'F850LP', 'F775W']
     
     params['is_parallel_field'] = IS_PARALLEL

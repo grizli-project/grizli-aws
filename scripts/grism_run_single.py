@@ -123,4 +123,4 @@ if __name__ == "__main__":
         exit 
         
     root = sys.argv[1]
-    auto_run(root=root, args=args) 
+    auto_run(root=root, args=sys.argv[2:]) 

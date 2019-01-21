@@ -38,7 +38,7 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
 
 if [ $2 == "-sync" ]
   then
-    aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" s3://${BUCKET}/Pipeline/${root} ./
+    aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
     gunzip ${root}/Prep/*fits.gz
 fi
 

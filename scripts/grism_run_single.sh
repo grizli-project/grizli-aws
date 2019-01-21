@@ -36,12 +36,18 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
 
+if [ $2 == "-sync" ]
+  then
+    aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" s3://${BUCKET}/Pipeline/${root} ./
+    gunzip ${root}/Prep/*fits.gz
+fi
+
 # aws s3 sync s3://${BUCKET}/Pipeline/${root} ./
 # rm -rf ./${root}/Prep/*fail*
 aws s3 rm --recursive --exclude "*" --include "*fail*" s3://${BUCKET}/Pipeline/${root}/Prep/
 
 ## Extractions
-grism_run_single.py ${root} 
+grism_run_single.py $@ #${root} 
 
 rm ${root}/Prep/*wcs-ref.fits
 rm ${root}/Prep/*bkg.fits

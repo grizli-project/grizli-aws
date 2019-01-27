@@ -72,7 +72,7 @@ def auto_run(root='j023507-040202', args=[]):
     params['only_preprocess'] = False
     params['filters'] = auto_script.IR_W_FILTERS + auto_script.IR_GRISMS
     params['filters'] += auto_script.IR_M_FILTERS
-    params['filters'] += ['F814W', 'F850LP', 'F775W']
+    params['filters'] += ['F814W', 'F850LP', 'F775W', 'F606W']
     
     params['is_parallel_field'] = IS_PARALLEL
     params['mosaic_pixel_scale'] = 0.06+0.02*params['is_parallel_field']

@@ -99,7 +99,11 @@ def auto_run(root='j023507-040202', args=[]):
                         params[p] = val.split(',')
                         print('Argument {0}: {1}'.format(p, val.split(',')))
                     else:
-                        params[p] = params[p].__class__(val)
+                        if isinstance(params[p], bool):
+                            params[p] = val.lower() == 'true'
+                        else:
+                            params[p] = params[p].__class__(val)
+                            
                         print('Argument {0}: {1}'.format(p, params[p]))
 
     auto_script.go(root=root, HOME_PATH=os.getcwd(), **params)

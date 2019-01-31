@@ -14,6 +14,7 @@ def auto_run(root='j023507-040202', args=[]):
     'is_dash': False,              # Flag if visits are in DASH mode
     'filters': auto_script.VALID_FILTERS,   #  Only use these filters
     'run_parse_visits': True,      # Parse visits to _visits.npy
+    'combine_minexp':2,            # Try to combine visits with 2 or fewer exp
     'is_parallel_field': False,    # If parallels, change visit parsing
     'skip_single_optical_visits': False, # Skip preprocess if single exp
     'fix_stars': True,             # Fill DQ flagged centers of stars

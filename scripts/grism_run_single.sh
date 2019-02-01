@@ -112,6 +112,7 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
                           --include "Prep/*.radec"    \
                           --include "Prep/*fine*"     \
                           --include "RAW/*.png"       \
+                          --include "RAW/*info"       \
                           --include "Extractions/*"   \
                           --exclude "Prep/FineBkup/*" \
                           --acl public-read \

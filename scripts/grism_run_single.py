@@ -10,6 +10,7 @@ def auto_run(root='j023507-040202', args=[]):
     # Preprocessing flags         
     's3_sync': True,               # Fetch data from AWS
     'inspect_ramps': False,        # Visual inspection on ramps
+    'remove_bad':True,             # Remove bad EXPFLAG visits
     'reprocess_parallel': True,    # Reprocess ramps in parallel
     'is_dash': False,              # Flag if visits are in DASH mode
     'filters': auto_script.VALID_FILTERS,   #  Only use these filters

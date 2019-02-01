@@ -42,17 +42,40 @@ if [ "$2" == "-sync" ]; then
     
     rm ./${root}/Prep/${root}_phot.fits
     rm ./${root}/Prep/${root}-ir*
+    rm ./${root}/Prep/${root}-*psf*
+    rm ${root}/Prep/*visits.npy
+    gunzip ${root}/Prep/*fits.gz
     
     # Symlinks to force skip already complete
     files=`ls ./${root}/Prep/*wcs.log | sed "s/_wcs.log/_drz_sci.fits/"`
     for file in $files; do 
+        echo $file
+        touch $file
+    done
+    
+    files=`ls ./${root}/Prep/*_column.png | sed "s/_column.png/_drz_sci.fits/"`
+    for file in $files; do 
+        echo $file
         touch $file
     done
     
     mkdir ${root}/Persistence
     mkdir ${root}/Extractions
+    rm ./${root}/Extractions/*
+        
+    # Make fake copies of flt-raw files
+    cd ${root}/Prep/
+    files=`ls *_flt.fits`
+    cd ../RAW/
+    for file in $files; do 
+        out=`echo $file | sed "s/_flt/_raw/"`
+        echo $file $out
+        ln -s ../Prep/$file $out
+        cp ../Prep/${file} .
+    done
+    cp ../Prep/*flc.fits .
+    cd ../../
     
-    gunzip ${root}/Prep/*fits.gz
 fi
 
 # aws s3 sync s3://${BUCKET}/Pipeline/${root} ./

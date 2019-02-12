@@ -41,6 +41,7 @@ def auto_run(root='j023507-040202', args=[]):
     # Image Mosaics                   
     'make_mosaics': True,             # Make full-field mosaics
     'fill_mosaics': 'grism',          # Fill empty parts of IR mosaics
+    'mask_spikes': False,             # Mask IR diffraction spikes
     'combine_all_filters': False,      # Combine ACS & IR
     'mosaic_pixel_scale': None,       # Pixel scale of mosaics (0.06)
     'half_optical_pixscale': False,   # Make smaller ACS/UVIS pixel scale

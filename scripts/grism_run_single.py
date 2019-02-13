@@ -118,6 +118,9 @@ def auto_run(root='j023507-040202', args=[]):
     os.chdir('../Prep/')
     auto_script.make_report(root, make_rgb=True)
     
+    # Done without errors
+    os.system('date > /tmp/{0}.success'.format(root))
+    
     # plt.ioff()
     # #fig = auto_script.field_rgb(root=root, HOME_PATH=HOME_PATH, xsize=18)
     # plt.close(fig)

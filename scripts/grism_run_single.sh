@@ -118,7 +118,7 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
                           --acl public-read \
                           ./${root} s3://${BUCKET}/Pipeline/${root}
 
-if [ -e ${root}/Prep/${root}_phot.fits ]; then 
+if [ -e /tmp/${root}.sucess ]; then 
     echo "${root}: Success"
     echo "Finished:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://${BUCKET}/Pipeline/Log/Finished/

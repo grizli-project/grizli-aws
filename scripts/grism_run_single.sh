@@ -36,14 +36,29 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
 
-if [ "$2" == "-sync" ]; then
+if [ "$2" == "-sync" ] || [ "$2" == "-grism" ]; then
     #aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
     aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
     
-    rm ./${root}/Prep/${root}_phot.fits
-    rm ./${root}/Prep/${root}-ir*
-    rm ./${root}/Prep/${root}-*psf*
-    rm ${root}/Prep/*visits.npy
+    # Make directories
+    
+    if [ ! -e "${root}/Persistence" ]; then
+         mkdir ${root}/Persistence
+    fi
+        
+    if [ ! -e "${root}/Extractions" ]; then
+         mkdir ${root}/Extractions
+    fi
+    
+    # If sync then clean previous files so that they'll be generated again
+    if [ "$2" == "-sync" ]; then 
+        rm ./${root}/Prep/${root}_phot.fits
+        rm ./${root}/Prep/${root}-ir*
+        rm ./${root}/Prep/${root}-*psf*
+        rm ${root}/Prep/*visits.npy
+        rm ./${root}/Extractions/*
+    
+    # Unzip zipped mosaics
     gunzip ${root}/Prep/*fits.gz
     
     # Symlinks to force skip already complete
@@ -59,10 +74,6 @@ if [ "$2" == "-sync" ]; then
         touch $file
     done
     
-    mkdir ${root}/Persistence
-    mkdir ${root}/Extractions
-    rm ./${root}/Extractions/*
-        
     # Make fake copies of flt-raw files
     cd ${root}/Prep/
     files=`ls *_flt.fits`

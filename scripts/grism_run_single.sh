@@ -57,6 +57,7 @@ if [ "$2" == "-sync" ] || [ "$2" == "-grism" ]; then
         rm ./${root}/Prep/${root}-*psf*
         rm ${root}/Prep/*visits.npy
         rm ./${root}/Extractions/*
+    fi 
     
     # Unzip zipped mosaics
     gunzip ${root}/Prep/*fits.gz

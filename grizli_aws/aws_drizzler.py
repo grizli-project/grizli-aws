@@ -178,7 +178,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
                            output_verify='fix')
             
             pyfits.writeto('{0}-{1}_drz_wht.fits'.format(label, filt), 
-                           data=sci, header=outh, overwrite=True, 
+                           data=wht, header=outh, overwrite=True, 
                            output_verify='fix')
             
             has_filts.append(filt)

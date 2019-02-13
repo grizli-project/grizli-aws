@@ -55,7 +55,7 @@ def group_by_filter():
     
 DEFAULT_RGB = {'output_dpi': 75, 'add_labels':False, 'output_format':'png', 'show_ir':False, 'scl':2, 'suffix':'.rgb'}
 
-def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w'], remove=True, rgb_params=DEFAULT_RGB, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, sync_fits=True):
+def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w'], remove=True, rgb_params=DEFAULT_RGB, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, sync_fits=True, subtract_median=True):
     """
     label='cp561356'; ra=150.208875; dec=1.850241667; size=40; filters=['f160w','f814w', 'f140w','f125w','f105w','f606w','f475w']
     
@@ -163,6 +163,15 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
         
         if status is not None:
             sci, wht, outh = status
+            
+            if subtract_median:
+                med = np.median(sci)
+                print('\n\nMedian {0} = {1:.3f}\n\n'.format(filt, med))
+                sci -= med
+                outh['IMGMED'] = (med, 'Median subtracted from the image')
+            else:
+                outh['IMGMED'] = (med, 'Median subtracted from the image')
+                
             pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, filt), 
                            data=sci, header=outh, overwrite=True, 
                            output_verify='fix')
@@ -311,6 +320,7 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105
             zp_i = utils.calc_header_zeropoint(ims[filter], ext=0)
             scl = 10**(-0.4*(zp_i-5-scale_ab))
             img = ims[filter][0].data*scl
+
             image = make_lupton_rgb(img, img, img, stretch=0.1, minimum=-0.01)
             
             ax = fig.add_subplot(1,NX,i+1)

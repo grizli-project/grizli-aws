@@ -170,6 +170,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
                 sci -= med
                 outh['IMGMED'] = (med, 'Median subtracted from the image')
             else:
+                med = 0.
                 outh['IMGMED'] = (med, 'Median subtracted from the image')
                 
             pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, filt), 

@@ -55,7 +55,7 @@ def group_by_filter():
     
 DEFAULT_RGB = {'output_dpi': 75, 'add_labels':False, 'output_format':'png', 'show_ir':False, 'scl':2, 'suffix':'.rgb'}
 
-def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w'], remove=True, rgb_params=DEFAULT_RGB, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, sync_fits=True, subtract_median=True):
+def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w'], remove=True, rgb_params=DEFAULT_RGB, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, sync_fits=True, subtract_median=True, include_saturated=True):
     """
     label='cp561356'; ra=150.208875; dec=1.850241667; size=40; filters=['f160w','f814w', 'f140w','f125w','f105w','f606w','f475w']
     
@@ -159,7 +159,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
         
         print('\n\n###\nMake filter: {0}'.format(filt))
         
-        status = utils.drizzle_from_visit(visits[0], h, pixfrac=pixfrac, kernel=kernel, clean=remove)
+        status = utils.drizzle_from_visit(visits[0], h, pixfrac=pixfrac, kernel=kernel, clean=remove, include_saturated=include_saturated)
         
         if status is not None:
             sci, wht, outh = status

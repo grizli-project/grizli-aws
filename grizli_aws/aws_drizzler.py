@@ -53,9 +53,11 @@ def group_by_filter():
     
     np.save('{0}_filter_groups.npy'.format(master), [groups])
     
-DEFAULT_RGB = {'output_dpi': 75, 'add_labels':False, 'output_format':'png', 'show_ir':False, 'scl':2, 'suffix':'.rgb'}
+RGB_PARAMS = {'xsize':4, 'rgb_min':-0.01, 'verbose':True, 'output_dpi': None, 'add_labels':False, 'output_format':'png', 'show_ir':False, 'scl':2, 'suffix':'.rgb', 'mask_empty':False}
 
-def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w'], remove=True, rgb_params=DEFAULT_RGB, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, sync_fits=True, subtract_median=True, include_saturated=True):
+#xsize=4, output_dpi=None, HOME_PATH=None, show_ir=False, pl=1, pf=1, scl=1, rgb_scl=[1, 1, 1], ds9=None, force_ir=False, filters=all_filters, add_labels=False, output_format='png', rgb_min=-0.01, xyslice=None, pure_sort=False, verbose=True, force_rgb=None, suffix='.rgb', scale_ab=scale_ab)
+
+def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w'], remove=True, rgb_params=RGB_PARAMS, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, thumb_height=2.0, sync_fits=True, subtract_median=True, include_saturated=True):
     """
     label='cp561356'; ra=150.208875; dec=1.850241667; size=40; filters=['f160w','f814w', 'f140w','f125w','f105w','f606w','f475w']
     
@@ -106,8 +108,10 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
         bkt = s3.Bucket('grizli-preprocess')
     
     else:
-        parent = ''
-            
+        # Run on local files, e.g., "Prep" directory
+        parent = None
+        remove = False
+        
     for ext in ['_visits.fits', '_visits.npy', '_filter_groups.npy'][-1:]:
 
         if (not os.path.exists('{0}{1}'.format(master, ext))) & (parent is not None):
@@ -122,7 +126,35 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
             
     #tab = utils.read_catalog('{0}_visits.fits'.format(master))
     #all_visits = np.load('{0}_visits.npy'.format(master))[0]
-    groups = np.load('{0}_filter_groups.npy'.format(master))[0]
+    if parent is not None:
+        groups = np.load('{0}_filter_groups.npy'.format(master))[0]
+    else:
+        # Reformat local visits.npy into a groups file
+        groups_files = glob.glob('*filter_groups.npy')
+        
+        if len(groups_files) == 0:
+            visit_file = glob.glob('*visits.npy')[0]
+            visits, groups, info = np.load(visit_file)
+            visit_root = visit_file.split('_visits')[0]
+            
+            visit_filters = np.array([v['product'].split('-')[-1] for v in visits])
+            groups = {}
+            for filt in np.unique(visit_filters):
+                groups[filt] = {}
+                groups[filt]['filter'] = filt
+                groups[filt]['files'] = []
+                groups[filt]['footprints'] = []
+                groups[filt]['awspath'] = None
+                
+                ix = np.where(visit_filters == filt)[0]
+                for i in ix:
+                    groups[filt]['files'].extend(visits[i]['files'])
+                    groups[filt]['footprints'].extend(visits[i]['footprints'])
+                
+            np.save('{0}_filter_groups.npy'.format(visit_root), [groups])
+                
+        else:
+            groups = np.load(groups_files[0])[0]
         
     #filters = ['f160w','f814w', 'f110w', 'f098m', 'f140w','f125w','f105w','f606w', 'f475w']
     
@@ -165,7 +197,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
             sci, wht, outh = status
             
             if subtract_median:
-                med = np.median(sci)
+                med = np.median(sci[sci != 0])
                 print('\n\nMedian {0} = {1:.3f}\n\n'.format(filt, med))
                 sci -= med
                 outh['IMGMED'] = (med, 'Median subtracted from the image')
@@ -193,11 +225,11 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
          
     if len(has_filts) == 0:
         return []
-           
+    
     if rgb_params:
-        auto_script.field_rgb(root=label, HOME_PATH=None, filters=has_filts, **rgb_params)
+        #auto_script.field_rgb(root=label, HOME_PATH=None, filters=has_filts, **rgb_params)
         
-        show_all_thumbnails(label=label, scale_ab=scale_ab, close=True)
+        show_all_thumbnails(label=label, thumb_height=thumb_height, scale_ab=scale_ab, close=True, rgb_params=rgb_params)
         
     if aws_bucket:   
         #aws_bucket = 's3://grizli-cosmos/CutoutProducts/'
@@ -223,7 +255,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
     
     return has_filts
 
-def get_cutout_from_aws(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, master='grizli-jan2019', scale_ab=21, remove=1, aws_bucket="s3://grizli/DropoutThumbnails/", lambda_func='grizliImagingCutout', force=False, **kwargs):
+def get_cutout_from_aws(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, master='grizli-jan2019', scale_ab=21, thumb_height=2.0, remove=1, aws_bucket="s3://grizli/DropoutThumbnails/", lambda_func='grizliImagingCutout', force=False, **kwargs):
     """
     Get cutout using AWS lambda
     """    
@@ -243,6 +275,7 @@ def get_cutout_from_aws(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, m
           "ra": ra,
           "dec": dec,
           "scale_ab": scale_ab,
+          #"thumb_height": thumb_height,
           "aws_bucket":aws_bucket,
           "remove":remove,
           "master":master,
@@ -282,7 +315,7 @@ def handler(event, context):
     print(event) #['s3_object_path'], event['verbose'])
     drizzle_images(**event)
 
-def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105w','f110w','f125w','f140w','f160w'], scale_ab=21, close=True):
+def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105w','f110w','f125w','f140w','f160w'], scale_ab=21, close=True, thumb_height=2., rgb_params=RGB_PARAMS):
     """
     Show individual filter and RGB thumbnails
     """
@@ -307,8 +340,10 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105
         if len(drz_files) > 0:
             im = pyfits.open(drz_files[0])
             ims[filter] = im
+    
+    rgb_params['scale_ab'] = scale_ab
             
-    slx, sly, rgb_filts, fig = auto_script.field_rgb(root=label, xsize=4, output_dpi=None, HOME_PATH=None, show_ir=False, pl=1, pf=1, scl=1, rgb_scl=[1, 1, 1], ds9=None, force_ir=False, filters=all_filters, add_labels=False, output_format='png', rgb_min=-0.01, xyslice=None, pure_sort=False, verbose=True, force_rgb=None, suffix='.rgb', scale_ab=scale_ab)
+    slx, sly, rgb_filts, fig = auto_script.field_rgb(root=label, HOME_PATH=None, **rgb_params) #xsize=4, output_dpi=None, HOME_PATH=None, show_ir=False, pl=1, pf=1, scl=1, rgb_scl=[1, 1, 1], ds9=None, force_ir=False, filters=all_filters, add_labels=False, output_format='png', rgb_min=-0.01, xyslice=None, pure_sort=False, verbose=True, force_rgb=None, suffix='.rgb', scale_ab=scale_ab)
     if close:
         plt.close()
     
@@ -361,7 +396,7 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105
     rgb = plt.imread('{0}.rgb.png'.format(label))
     
     NX = (len(filters)+1)
-    fig = plt.figure(figsize=[1.5*NX,1.5])
+    fig = plt.figure(figsize=[thumb_height*NX, thumb_height])
     ax = fig.add_subplot(1,NX,NX)
     ax.imshow(rgb, origin='upper', interpolation='nearest')
     ax.text(0.05, 0.95, label, ha='left', va='top', transform=ax.transAxes, fontsize=7, color='w', bbox=dict(facecolor='k', edgecolor='None', alpha=0.8))

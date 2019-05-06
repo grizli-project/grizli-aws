@@ -12,7 +12,7 @@ def auto_extract(root='j023507-040202', maglim=[16.5,26]):
     args = np.load('fit_args.npy')[0]
     pline = args['pline']
     
-    auto_script.extract(field_root=root, maglim=maglim, ids=None, run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=DITHERED_PLINE)
+    auto_script.extract(field_root=root, maglim=maglim, ids=None, run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=pline)
     
     # Test
     #auto_script.extract(field_root=root, maglim=[16.5,26], ids=[403], run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=DITHERED_PLINE)

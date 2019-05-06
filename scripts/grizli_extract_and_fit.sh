@@ -4,6 +4,7 @@
 
 BUCKET=aws-grivam
 BUCKET=grizli-grism
+BUCKET=grizli
 
 if [ $# -eq 0 ]
   then
@@ -71,7 +72,7 @@ echo "${root} N=${num_beams}"
 
 # Redshift fits, those that weren't fit by lambda
 cpu_count=`python -c 'import multiprocessing; print(multiprocessing.cpu_count()//2)'`
-mpiexec -n $cpu_count python -m mpi4py.futures $GRIZLICODE/grizli/pipeline/run_MPI.py
+mpiexec -n $cpu_count python -m mpi4py.futures $(python -c "import os; import grizli; print(os.path.dirname(grizli.__file__))")/pipeline/run_MPI.py
 
 
 # Check for corrupt full.fits files

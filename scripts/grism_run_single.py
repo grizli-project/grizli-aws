@@ -13,6 +13,7 @@ def auto_run(root='j023507-040202', args=[]):
     kwargs['fetch_files_args']['reprocess_parallel'] = True
     kwargs['preprocess_args']['skip_single_optical_visits'] = False
     kwargs['run_fine_alignment'] = False
+    kwargs['preprocess_args']['catalogs'] = ['PS1','DES','NSC','SDSS','GAIA','WISE']
     
     # params = {
     # # Preprocessing flags         
@@ -185,9 +186,9 @@ if __name__ == "__main__":
     from grizli.pipeline import auto_script
     utils.set_warnings()
     
-    if len(sys.argv) < 3:
-        print('Usage: aws.py {field} {init/run/summary} [min_mag,max_mag]')
-        exit 
+    # if len(sys.argv) < 3:
+    #     print('Usage: aws.py {field} {init/run/summary} [min_mag,max_mag]')
+    #     exit 
         
     root = sys.argv[1]
     auto_run(root=root, args=sys.argv[2:]) 

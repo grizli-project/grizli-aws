@@ -7,7 +7,10 @@ def auto_extract(root='j023507-040202', maglim=[16.5,26]):
     
     tab = utils.GTable.gread('{0}_footprint.fits'.format(root))
     
-    DITHERED_PLINE = {'kernel': 'point', 'pixfrac': 0.2, 'pixscale': 0.1, 'size': 8, 'wcs': None}
+    pline = DITHERED_PLINE = {'kernel': 'point', 'pixfrac': 0.2, 'pixscale': 0.1, 'size': 8, 'wcs': None}
+    
+    args = np.load('fit_args.npy')[0]
+    pline = args['pline']
     
     auto_script.extract(field_root=root, maglim=maglim, ids=None, run_fit=False, MW_EBV=tab.meta['MW_EBV'], pline=DITHERED_PLINE)
     

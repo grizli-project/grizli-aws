@@ -38,7 +38,7 @@ aws s3 cp ${root}.log s3://${BUCKET}/Pipeline/Log/Start/
 
 # Copy from S3
 aws s3 sync s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
-aws s3 cp s3://${BUCKET}/Pipeline/${root}_footprint.fits ./
+aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 
 ## Extractions
 grizli_extract_and_fit.py ${root} run ${maglim}

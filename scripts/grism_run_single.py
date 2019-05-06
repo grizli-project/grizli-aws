@@ -150,7 +150,7 @@ def auto_run(root='j023507-040202', args=[]):
     auto_script.make_report(root, make_rgb=True)
     
     # Save YAML parameter file
-    fp = open('{0}.run.yaml'.format(root),'w')
+    fp = open('{0}.run.yml'.format(root),'w')
     kwargs_copy['multiband_catalog_args']['phot_apertures'] = None 
     for k in kwargs_copy: 
         try: 

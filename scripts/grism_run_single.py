@@ -13,7 +13,7 @@ def auto_run(root='j023507-040202', args=[]):
     kwargs['fetch_files_args']['reprocess_parallel'] = True
     kwargs['preprocess_args']['skip_single_optical_visits'] = False
     kwargs['run_fine_alignment'] = False
-    kwargs['preprocess_args']['catalogs'] = ['PS1','DES','NSC','SDSS','GAIA','WISE']
+    kwargs['visit_prep_args']['reference_catalogs'] = ['PS1','DES','NSC','SDSS','GAIA','WISE']
     
     # params = {
     # # Preprocessing flags         

@@ -2,9 +2,11 @@
 
 def auto_run(root='j023507-040202', args=[]):
     import os
+    import yaml
+    
     from grizli import utils
     utils.set_warnings()
-    from grizli.pipeline import auto_script
+    from grizli.pipeline import auto_script, default_params
     
     kwargs = auto_script.get_yml_parameters() 
     
@@ -79,8 +81,8 @@ def auto_run(root='j023507-040202', args=[]):
     
     # Limited filters
     kwargs['only_preprocess'] = False
-    kwargs['filters'] = auto_script.IR_W_FILTERS + auto_script.IR_GRISMS
-    kwargs['filters'] += auto_script.IR_M_FILTERS
+    kwargs['filters'] = default_params.IR_W_FILTERS + default_params.IR_GRISMS
+    kwargs['filters'] += default_params.IR_M_FILTERS
     
     # Optical filters.  Bluer than F555W often fail for low source counts?
     kwargs['filters'] += ['F814W', 'F850LP', 'F775W', 'F625W', 'F606W', 'F555W', 'F350LP']

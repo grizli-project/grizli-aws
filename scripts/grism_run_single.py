@@ -144,20 +144,26 @@ def auto_run(root='j023507-040202', args=[]):
                         print('Argument {0}: {1}'.format(p, d[p]))
                         
     # Save YAML parameter file
-    kwargs_copy = kwargs.copy()
-    fp = open('{0}.run.yml'.format(root),'w')
-    kwargs_copy['multiband_catalog_args']['phot_apertures'] = None 
-    kwargs_copy['multiband_catalog_args']['filter_kernel'] = None
+    # Need copies of a few things that will break yaml.dump
+    phot_apertures = kwargs['multiband_catalog_args']['phot_apertures']
+    filter_kernel = kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] 
     
-    for k in kwargs_copy: 
+    kwargs['multiband_catalog_args']['phot_apertures'] = None 
+    kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = None
+    
+    fp = open('{0}.run.yml'.format(root),'w')    
+    for k in kwargs: 
         try: 
-            d = {k:kwargs_copy[k].copy()} 
+            d = {k:kwargs[k].copy()} 
         except: 
-            d = {k:kwargs_copy[k]} 
+            d = {k:kwargs[k]} 
         
         yaml.dump(d, stream=fp, default_flow_style=False) 
     
     fp.close()
+    
+    kwargs['multiband_catalog_args']['phot_apertures'] = phot_apertures 
+    kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = filter_kernel
     
     auto_script.go(root=root, HOME_PATH=os.getcwd(), **kwargs)
     

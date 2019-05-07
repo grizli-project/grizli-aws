@@ -143,15 +143,8 @@ def auto_run(root='j023507-040202', args=[]):
                             
                         print('Argument {0}: {1}'.format(p, d[p]))
                         
-    kwargs_copy = kwargs.copy()
-    auto_script.go(root=root, HOME_PATH=os.getcwd(), **kwargs)
-    
-    #auto_script.go(root=root, maglim=[19, 23], HOME_PATH=HOME_PATH, inspect_ramps=False, manual_alignment=False, is_parallel_field=IS_PARALLEL, reprocess_parallel=True, only_preprocess=False, run_extractions=False, run_fit=False, s3_sync='cp', fine_radec=None, combine_all_filters=False, gaia_by_date=True, align_simple=False, align_clip=100, master_radec=master_radec, parent_radec=parent_radec, is_dash=False, run_parse_visits=True, reference_wcs_filters=['F160W','F140W','F125W','F105W','F110W','F098M','F814W','F850LP', 'F606W','F435W'])
-    
-    os.chdir('../Prep/')
-    auto_script.make_report(root, make_rgb=True)
-    
     # Save YAML parameter file
+    kwargs_copy = kwargs.copy()
     fp = open('{0}.run.yml'.format(root),'w')
     kwargs_copy['multiband_catalog_args']['phot_apertures'] = None 
     kwargs_copy['multiband_catalog_args']['filter_kernel'] = None
@@ -166,6 +159,13 @@ def auto_run(root='j023507-040202', args=[]):
     
     fp.close()
     
+    auto_script.go(root=root, HOME_PATH=os.getcwd(), **kwargs)
+    
+    #auto_script.go(root=root, maglim=[19, 23], HOME_PATH=HOME_PATH, inspect_ramps=False, manual_alignment=False, is_parallel_field=IS_PARALLEL, reprocess_parallel=True, only_preprocess=False, run_extractions=False, run_fit=False, s3_sync='cp', fine_radec=None, combine_all_filters=False, gaia_by_date=True, align_simple=False, align_clip=100, master_radec=master_radec, parent_radec=parent_radec, is_dash=False, run_parse_visits=True, reference_wcs_filters=['F160W','F140W','F125W','F105W','F110W','F098M','F814W','F850LP', 'F606W','F435W'])
+    
+    os.chdir('../Prep/')
+    auto_script.make_report(root, make_rgb=True)
+        
     # Done without errors
     os.system('date > /tmp/{0}.success'.format(root))
     

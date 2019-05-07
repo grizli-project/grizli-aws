@@ -104,7 +104,7 @@ rm ${root}/Prep/astrodrizzle.log
 rm -rf ${root}/Prep/FineBkup
 
 cp ${root}.auto_script.log ./${root}/Prep/
-cp ${root}.run.yml ./${root}/Prep/
+cp ${root}*yml ./${root}/Prep/
 
 echo "gzip mosaics"
 

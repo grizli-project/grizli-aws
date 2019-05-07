@@ -74,7 +74,6 @@ echo "${root} N=${num_beams}"
 cpu_count=`python -c 'import multiprocessing; print(multiprocessing.cpu_count()//2)'`
 mpiexec -n $cpu_count python -m mpi4py.futures $(python -c "import os; import grizli; print(os.path.dirname(grizli.__file__))")/pipeline/run_MPI.py
 
-
 # Check for corrupt full.fits files
 grizli_check_bad_full.sh
 

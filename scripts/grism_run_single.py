@@ -3,10 +3,13 @@
 def auto_run(root='j023507-040202', args=[]):
     import os
     import yaml
+    import time
     
     from grizli import utils
     utils.set_warnings()
+    
     from grizli.pipeline import auto_script, default_params
+    import grizli
     
     kwargs = auto_script.get_yml_parameters() 
     
@@ -128,42 +131,58 @@ def auto_run(root='j023507-040202', args=[]):
                     d = kwargs
                     valid = pspl in kwargs
                     p = pspl
-                
-                print(valid, pspl, d[p])
-                    
+                                    
                 if valid:
                     if isinstance(d[p], list):
-                        d[p] = val.split(',')
-                        print('Argument {0}: {1}'.format(p, val.split(',')))
+                        lval = val.replace('[','').replace(']','').split(',')
+                        
+                        # Item shoud be a list
+                        if len(lval) < len(d[p]):
+                            msg = 'Parameter {0} should be a list like {1}'
+                            raise(ValueError(msg.format(arg, d[p])))
+                        
+                        try:
+                            lval = list(np.cast[float](lval))
+                        except:
+                            pass
+                            
+                        d[p] = lval
+                        print('Runtime argument: {0} = {1}'.format(p, lval))
                     else:
                         if isinstance(d[p], bool):
                             d[p] = val.lower() == 'true'
                         else:
                             d[p] = d[p].__class__(val)
                             
-                        print('Argument {0}: {1}'.format(p, d[p]))
+                        print('Runtime argument: {0} = {1}'.format(p, d[p]))
                         
     # Save YAML parameter file
     # Need copies of a few things that will break yaml.dump
-    phot_apertures = kwargs['multiband_catalog_args']['phot_apertures']
-    filter_kernel = kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] 
+    # phot_apertures = kwargs['multiband_catalog_args']['phot_apertures']
+    # filter_kernel = kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] 
+    # 
+    # kwargs['multiband_catalog_args']['phot_apertures'] = None 
+    # kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = None
+    # 
+    # fp = open('{0}.run.yml'.format(root),'w')  
+    # fp.write('# {0}\n'.format(time.ctime()))
+    # fp.write('# Grizli version = {0}\n'.format(grizli.__version__))
+    #   
+    # for k in kwargs: 
+    #     try: 
+    #         d = {k:kwargs[k].copy()} 
+    #     except: 
+    #         d = {k:kwargs[k]} 
+    #     
+    #     yaml.dump(d, stream=fp, default_flow_style=False) 
+    # 
+    # fp.close()
+    # 
+    # kwargs['multiband_catalog_args']['phot_apertures'] = phot_apertures 
+    # kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = filter_kernel
     
-    kwargs['multiband_catalog_args']['phot_apertures'] = None 
-    kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = None
-    
-    fp = open('{0}.run.yml'.format(root),'w')    
-    for k in kwargs: 
-        try: 
-            d = {k:kwargs[k].copy()} 
-        except: 
-            d = {k:kwargs[k]} 
-        
-        yaml.dump(d, stream=fp, default_flow_style=False) 
-    
-    fp.close()
-    
-    kwargs['multiband_catalog_args']['phot_apertures'] = phot_apertures 
-    kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = filter_kernel
+    output_yml = '{0}.auto_script.yml'.format(root)
+    auto_script.write_params_to_yml(kwargs, output_file=output_yml)
     
     auto_script.go(root=root, HOME_PATH=os.getcwd(), **kwargs)
     

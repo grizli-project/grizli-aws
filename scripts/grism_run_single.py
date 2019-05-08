@@ -5,6 +5,9 @@ def auto_run(root='j023507-040202', args=[]):
     import yaml
     import time
     
+    import matplotlib.pyplot as plt
+    plt.ioff()
+    
     from grizli import utils
     utils.set_warnings()
     

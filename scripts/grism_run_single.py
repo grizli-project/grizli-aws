@@ -93,13 +93,18 @@ def auto_run(root='j023507-040202', args=[]):
     kwargs['filters'] += default_params.IR_M_FILTERS
     
     # Optical filters.  Bluer than F555W often fail for low source counts?
-    kwargs['filters'] += ['F814W', 'F850LP', 'F775W', 'F625W', 'F606W', 'F555W', 'F350LP']
+    kwargs['filters'] += ['F814W', 'F850LP', 'F775W', 'F625W', 'F606W', 'F555W', 'F350LP', 'F600LP']
     
     kwargs['is_parallel_field'] = IS_PARALLEL
     
     pixel_scale = 0.06+0.02*IS_PARALLEL
     kwargs['mosaic_args']['wcs_params']['pixel_scale'] = pixel_scale
     kwargs['mosaic_args']['mosaic_pixfrac'] = pixel_scale/0.12
+    
+    ### Force conservative pixel scale
+    kwargs['mosaic_args']['wcs_params']['pixel_scale'] = 0.1
+    kwargs['mosaic_args']['mosaic_pixfrac'] = 0.33 #pixel_scale/0.12
+    kwargs['mosaic_args']['half_optical_pixscale'] = True
     
     # Try less aggressive background if CLASH
     # IS_BRIGHT_CLUSTER = utils.column_string_operation(tab['proposal_pi'], ['Postman', 'Lotz'], method='count', logical='or').sum() > 0
@@ -140,7 +145,7 @@ def auto_run(root='j023507-040202', args=[]):
                         lval = val.replace('[','').replace(']','').split(',')
                         
                         # Item shoud be a list
-                        if len(lval) < len(d[p]):
+                        if (len(lval) < len(d[p])) & ('filter' not in p):
                             msg = 'Parameter {0} should be a list like {1}'
                             raise(ValueError(msg.format(arg, d[p])))
                         

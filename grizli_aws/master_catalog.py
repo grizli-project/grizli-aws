@@ -309,6 +309,9 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     
     fit['use_spec'].format = 'd'
     
+    fit['z_map'].format = '.4f'
+    fit['chinu'].format = '.2f'
+    
     fit['ra'].format = '.4f'
     fit['dec'].format = '.4f'
     fit['mag_auto'].format = '.2f'
@@ -349,7 +352,11 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     new.write(outroot+'.fits', overwrite=True)
     
     print('aws s3 cp {0}.fits s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
-
+    
+    ######################
+    # use_spec versions
+    outroot += '.use_spec'
+    clip &= (fit['use_spec'])
 
 def summary_table(output_table='summary_glass-acs-2018.05.21'
 ):

@@ -1,5 +1,34 @@
 #!/usr/bin/env python
 
+def redo_query(root='j023507-040202', instruments=['WFC3/IR','WFC3/UVIS','ACS/WFC'], filters=[], proposal_id=[]):
+    """
+    Redo the MAST query based on the parent table to look for new data
+    """
+    from astropy.io.misc import yaml 
+    from mastquery import query, overlaps
+    from grizli import utils
+    
+    # Read the existing catalog
+    parent = utils.read_catalog('{0}_footprint.fits'.format(root))
+    
+    # Overlap keywords, if available
+    kwargs = {}
+    if 'BUFFER' in parent.meta:
+        kwargs['buffer_arcmin'] = parent.meta['BUFFER']
+
+    if 'FOLAP' in parent.meta:
+        kwargs['fractional_overlap'] = parent.meta['FOLAP']
+    
+    if 'MIN_AREA' in parent.meta:
+        kwargs['min_area'] = parent.meta['MIN_AREA']
+    
+    # Rerun overlap query to get new data
+    tabs = overlaps.find_overlaps(parent, filters=filters, 
+                                   proposal_id=proposal_id, 
+                                   instruments=instruments, 
+                                   close=True, keep_single_name=True, 
+                                   **kwargs)
+    
 def auto_run(root='j023507-040202', args=[]):
     import os
     import yaml
@@ -13,6 +42,8 @@ def auto_run(root='j023507-040202', args=[]):
     
     from grizli.pipeline import auto_script, default_params
     import grizli
+    
+    # Run query again
     
     kwargs = auto_script.get_yml_parameters() 
     
@@ -125,6 +156,13 @@ def auto_run(root='j023507-040202', args=[]):
                 pspl = arg.strip('--').split('=')[0]
                 val = arg.split('=')[1]
                 
+                if pspl == 'redo_query':
+                    if val.lower() in ['true']:
+                        redo_query(root=root)
+                    
+                    # Next argument
+                    continue
+                    
                 # Split nested dictionaries by '.'
                 if '.' in pspl:
                     valid = False

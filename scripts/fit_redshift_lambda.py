@@ -51,7 +51,7 @@ def fit_lambda(root='j100025+021706', newfunc=True, bucket_name='aws-grivam', sk
         print(obj)
         event = {
               's3_object_path': obj,
-              'verbose':      "False",
+              'verbose':      "True",
               'skip_started': "True",
               'check_wcs' :   "False",
               'bucket': bucket_name,
@@ -70,7 +70,7 @@ def fit_lambda(root='j100025+021706', newfunc=True, bucket_name='aws-grivam', sk
     time.sleep(sleep_time)
     
     # Status again to check products
-    beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=False)
+    beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True)
     
 def get_needed_paths(root, get_string=False, bucket_name='aws-grivam', skip_existing=True):
     """
@@ -134,6 +134,8 @@ if __name__ == "__main__":
         newfunc = bool(sys.argv[2].lower() == 'true')
     else:
         newfunc = False
-        
-    fit_lambda(root=root, newfunc=newfunc, bucket_name='grizli-grism', skip_existing=False)
+    
+    bucket_name = 'grizli-grism'
+    bucket_name = 'aws-grivam'
+    fit_lambda(root=root, newfunc=newfunc, bucket_name=bucket_name, skip_existing=False)
     

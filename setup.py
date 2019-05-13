@@ -1,4 +1,5 @@
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup
 import glob
 import subprocess
 
@@ -24,5 +25,5 @@ setup(name='grizli_aws',
       url='https://github.com/grizli-project/grizli-aws',
       packages=['grizli_aws'],
       scripts=glob.glob('scripts/*'),
-      requires=['boto3']
+      install_requires=['boto3']
      )

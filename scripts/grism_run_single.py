@@ -156,6 +156,9 @@ def auto_run(root='j023507-040202', args=[]):
     if args:
         for arg in args:
             if arg.startswith('--'):
+                if arg in ['--grism', '--sync']:
+                    continue
+                    
                 pspl = arg.strip('--').split('=')[0]
                 val = arg.split('=')[1]
                 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-def fit_lambda(root='j100025+021706', newfunc=False, bucket_name='aws-grivam', skip_existing=True, check_wcs=False, use_psf=False, verbose=False, skip_started=True, quasar_fit=False, **kwargs):
+def fit_lambda(root='j100025+021706', newfunc=False, bucket_name='aws-grivam', skip_existing=True, sleep=True, check_wcs=False, use_psf=False, verbose=False, skip_started=True, quasar_fit=False, **kwargs):
     """
     check_wcs=True for ACS
     """
@@ -83,13 +83,15 @@ def fit_lambda(root='j100025+021706', newfunc=False, bucket_name='aws-grivam', s
             LogType='Tail',
             Payload=json.dumps(event))
     
-    sleep_time = 303*np.ceil(len(beams)/950)
-    print('{0}: sleep {1}'.format(time.ctime(), sleep_time))
+    # Sleep for status check    
+    if sleep:
+        sleep_time = 303*np.ceil(len(beams)/950)
+        print('{0}: sleep {1}'.format(time.ctime(), sleep_time))
     
-    time.sleep(sleep_time)
+        time.sleep(sleep_time)
     
-    # Status again to check products
-    beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True)
+        # Status again to check products
+        beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True)
     
 def get_needed_paths(root, get_string=False, bucket_name='aws-grivam', skip_existing=True):
     """
@@ -159,7 +161,8 @@ if __name__ == "__main__":
     kwargs = {'root':root, 
               'bucket_name':bucket_name, 
               'skip_existing':True, 
-              'newfunc':False}
+              'newfunc':False,
+              'sleep':True}
     
     # Args passed to the lambda event
     kwargs['check_wcs'] = False # Set to true for ACS
@@ -171,7 +174,9 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         for args in sys.argv[2:]:
             keypair = args.strip('--').split('=')
-            if keypair[0] in ['newfunc','skip_existing']:
+            
+            if keypair[0] in ['newfunc','skip_existing','sleep','checkwcs','use_psf','verbose','skip_started','quasar_fit']:
+                # Bools
                 if len(keypair) == 1:
                     kwargs[keypair[0]] = True
                 else:
@@ -179,6 +184,7 @@ if __name__ == "__main__":
             else:
                 if keypair[0] in kwargs:
                     kwargs[keypair[0]] = keypair[1]
-            
+    
+    print('kwargs: ', kwargs)        
     fit_lambda(**kwargs) #newfunc=newfunc, bucket_name=bucket_name, skip_existing=skip_existing)
     

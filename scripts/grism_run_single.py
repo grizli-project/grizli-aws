@@ -201,8 +201,14 @@ def auto_run(root='j023507-040202', args=[]):
                         if isinstance(d[p], bool):
                             d[p] = val.lower() == 'true'
                         else:
-                            d[p] = d[p].__class__(val)
-                            
+                            try:
+                                d[p] = d[p].__class__(val)
+                            except:
+                                try:
+                                    d[p] = float(val)
+                                except:
+                                    d[p] = val
+                                    
                         print('Runtime argument: {0} = {1}'.format(p, d[p]))
                         
     # Save YAML parameter file

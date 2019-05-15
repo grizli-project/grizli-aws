@@ -135,12 +135,15 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
 nbeams=`ls ${root}/Extractions/ |grep -c beams.fits`
 nfull=`ls ${root}/Extractions/ |grep -c full.fits`
 
-if [ $nbeams -gt 0 ] && [ $nbeams -ne $nfull ]; then
-    
-    echo "Run redshift fit (nbeams=${nbeams}, nfull=${nfull})"
-    
+if [ $nbeams -gt 0 ]; then
+        
     # Run the lambda function
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True
+    if [ $nbeams -ne $nfull ]; then 
+        echo "Run redshift fit (nbeams=${nbeams}, nfull=${nfull})"
+        fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True
+    else
+        echo "Make redshift catalog (nbeams=${nbeams}, nfull=${nfull})"
+    fi
     
     # Generate catalog
     cd ${root}/Extractions/

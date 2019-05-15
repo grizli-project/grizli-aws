@@ -55,8 +55,11 @@ if [ "$2" == "--sync" ] || [ "$2" == "--grism" ]; then
         rm ./${root}/Prep/${root}_phot.fits
         rm ./${root}/Prep/${root}-ir*
         rm ./${root}/Prep/${root}-*psf*
-        rm ${root}/Prep/*visits.npy
+        rm ./${root}/Prep/*visits.npy
         rm ./${root}/Extractions/*
+        
+        aws s3 rm --recursive --exclude "*" --include "Prep/${root}_phot.fits" --include "Prep/${root}-ir*" --include "Prep/${root}-*psf*" --include "Prep/*visits.npy" --include "Extractions/*" s3://${BUCKET}/Pipeline/${root}
+        
     fi 
     
     # Unzip zipped mosaics

@@ -1,15 +1,21 @@
 #!/usr/bin/env python
-def fit_lambda(root='j100025+021706', newfunc=False, bucket_name='aws-grivam', skip_existing=True, sleep=True, check_wcs=False, use_psf=False, verbose=False, skip_started=True, quasar_fit=False, **kwargs):
+def fit_lambda(root='j100025+021706', beams=[], newfunc=False, bucket_name='aws-grivam', skip_existing=True, sleep=True, check_wcs=False, use_psf=False, verbose=False, skip_started=True, quasar_fit=False, zr=None, output_path=None, show_event=False, **kwargs):
     """
     check_wcs=True for ACS
     """
     import time
     import os
+    import yaml
+    
     import numpy as np
     import boto3
     import json
 
-    beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=skip_existing)
+    if len(beams) == 0:
+        beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=skip_existing)
+    else:
+        sleep = False
+        
     if len(beams) == 0:
         print('{0}: No beams to fit'.format(root))
         
@@ -51,11 +57,13 @@ def fit_lambda(root='j100025+021706', newfunc=False, bucket_name='aws-grivam', s
     session = boto3.Session()
     client = session.client('lambda', region_name='us-east-1')
     
-    # s3 object = s3://aws-grivam/{obj}
-    # obj = 'Pipeline/sparcs0034/Extractions/sparcs0034_00441.beams.fits'
+    # s3 object = s3://{bucket_name}/{s3_object_path}
+    # e.g., 'Pipeline/sparcs0034/Extractions/sparcs0034_00441.beams.fits'
      
-    for obj in beams:
-        print(obj)
+    NB = len(beams)
+    for i, s3_object_path in enumerate(beams):
+        print('{0:>5} / {1:>5} : {2}'.format(i+1, NB, s3_object_path))
+        
         if False:
             # Defaults
             check_wcs=False # Set to true for ACS
@@ -65,7 +73,7 @@ def fit_lambda(root='j100025+021706', newfunc=False, bucket_name='aws-grivam', s
             quasar_fit=False  # Fit with quasar templates
             
         event = {
-              "s3_object_path": obj,
+              "s3_object_path": s3_object_path,
               "bucket": bucket_name,
               "verbose":      str(verbose),
               "skip_started": str(skip_started),
@@ -74,8 +82,18 @@ def fit_lambda(root='j100025+021706', newfunc=False, bucket_name='aws-grivam', s
               "use_psf"   : str(use_psf)
             }
         
-        # output_path
+        if output_path is not None:
+            if output_path == 'self':
+                event['output_path'] = os.path.dirname(s3_object_path)
+            else:
+                event['output_path'] = output_path
         
+        if zr is not None:
+            event['zr'] = zr.split(',')
+            
+        if show_event:
+            print('Event: \n\n', event.__str__().replace('\'', '"').replace(',', ',\n'))
+            
         # Invoke Lambda function
         response = client.invoke(
             FunctionName=func,
@@ -141,6 +159,8 @@ def get_needed_paths(root, get_string=False, bucket_name='aws-grivam', skip_exis
     
 if __name__ == "__main__":
     import sys
+    import yaml
+    
     import numpy as np
     from grizli import utils
     from grizli.pipeline import auto_script
@@ -162,7 +182,11 @@ if __name__ == "__main__":
               'bucket_name':bucket_name, 
               'skip_existing':True, 
               'newfunc':False,
-              'sleep':True}
+              'sleep':True,
+              'beams':[],
+              'output_path':None,
+              'zr':None,
+              'show_event':False}
     
     # Args passed to the lambda event
     kwargs['check_wcs'] = False # Set to true for ACS
@@ -171,20 +195,39 @@ if __name__ == "__main__":
     kwargs['skip_started'] = True # SKip objects already started
     kwargs['quasar_fit'] = False  # Fit with quasar templates
     
+    dryrun=False
+    
     if len(sys.argv) > 2:
         for args in sys.argv[2:]:
             keypair = args.strip('--').split('=')
             
-            if keypair[0] in ['newfunc','skip_existing','sleep','checkwcs','use_psf','verbose','skip_started','quasar_fit']:
-                # Bools
+            # Booleans
+            if keypair[0] in ['newfunc','skip_existing','sleep','checkwcs','use_psf','verbose','skip_started','quasar_fit', 'show_event']:
                 if len(keypair) == 1:
                     kwargs[keypair[0]] = True
                 else:
                     kwargs[keypair[0]] = keypair[1].lower() in ['true']
+            
+            # List of s3 beams.fits paths
+            elif keypair[0] == 'beams':
+                # Fit a single object
+                kwargs['beams'] = keypair[1].split(',')
+            
+            # List of ids associated with {root}
+            elif keypair[0] == 'ids':
+                kwargs['beams'] = ['Pipeline/{0}/Extractions/{0}_{1:05d}.beams.fits'.format(root, int(id)) for id in keypair[1].split(',')]
+            
+            # don't run the script
+            elif keypair[0] == 'dryrun':
+                dryrun=True
+            
+            # Everything else
             else:
                 if keypair[0] in kwargs:
                     kwargs[keypair[0]] = keypair[1]
     
-    print('kwargs: ', kwargs)        
-    fit_lambda(**kwargs) #newfunc=newfunc, bucket_name=bucket_name, skip_existing=skip_existing)
+    print('Arguments: \n\n', '  '+yaml.dump(kwargs).replace('\n', '\n   '))
+    
+    if not dryrun:
+        fit_lambda(**kwargs) #newfunc=newfunc, bucket_name=bucket_name, skip_existing=skip_existing)
     

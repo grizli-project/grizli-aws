@@ -254,13 +254,16 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     psx = [16, 18.5, 21, 24, 25.5]
     psy = [8, 4., 2.6, 2.3, 2.1]
     
+    # New pixel scale
+    psy = np.array(psy)*0.06/0.1
+    
     # ACS
     if False:
         psx = [16, 21, 24, 25.5, 27]
         psy = [4.5, 2.9, 2.9, 2.6, 2.6]
         
     pa = np.polyfit(psx, psy, 2)
-    py = np.polyval(pa, fit['mag_auto'])
+    py = np.interp(fit['mag_auto'], psx, psy)
 
     # Point source
     point_source = (fit['flux_radius'] < py) & (fit['mag_auto'] < 25.5)
@@ -323,17 +326,28 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     fit['a_image'].format = '.1f'
     for l in ['Ha','OIII','Hb','OII','SIII']:
         fit['sn_'+l].format = '.1f'
+    
+    cols = ['root', 'idx','ra', 'dec', 't_g800l', 't_g102', 't_g141', 'mag_auto', 'use_spec', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zw1', 'ok_width', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
+    
+    for g in ['g102', 'g141', 'g800l']:
+        if 't_'+g in fit.colnames:
+            bad = ~np.isfinite(fit['t_'+g])
+            fit['t_'+g][bad] = 0.
+            
+            if fit['t_'+g].max() == 0:
+                pop = True
+            else:
+                pop = False
+        else:
+            pop = True
         
-    if 't_g800l' in fit.colnames:
-        cols = ['root', 'idx','ra', 'dec', 't_g800l', 'mag_auto', 'use_spec', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zw1', 'ok_width', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
-    else:
-        cols = ['root', 'idx','ra', 'dec', 't_g102', 't_g141', 'mag_auto', 'use_spec', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zw1', 'ok_width', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
+        if pop:
+            cols.pop(cols.index('t_'+g))
     
     if 'sparcs' in outroot:
         cols += ['aws_png_sed']
-        cols.pop(cols.index('t_g141'))
         
-    filter_cols = ['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'flux_radius', 'zw1', 'use_spec', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII']
+    filter_cols = ['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'flux_radius', 'zw1', 'use_spec', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 't_g800l', 't_g102', 't_g141']
     
     if False:
         clip = (fit['bic_diff'] > 20) & (fit['chinu'] < 2) & (fit['zwidth1'] < 0.01)

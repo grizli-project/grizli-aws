@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+if __name__ == "__main__":
+    import importlib
+
+    for module in ['grizli','grizli_aws', 'eazy', 'reprocess_wfc3', 'tristars', 'mastquery', 'wfc3dash', 'prospect', 'sep', 'numpy', 'scipy', 'astropy', 'astroquery', 'shapely', 'photutils', 'drizzlepac', 'wfc3tools', 'stsci.tools']:
+        #print(module)
+        mod = importlib.import_module(module)
+        print('{0:>20} : {1}'.format(module, mod.__version__))
+        

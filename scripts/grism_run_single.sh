@@ -36,7 +36,7 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
 
-if [ "$2" == "-sync" ] || [ "$2" == "-grism" ]; then
+if [ "$2" == "--sync" ] || [ "$2" == "--grism" ]; then
     #aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
     aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
     
@@ -51,7 +51,7 @@ if [ "$2" == "-sync" ] || [ "$2" == "-grism" ]; then
     fi
     
     # If sync then clean previous files so that they'll be generated again
-    if [ "$2" == "-sync" ]; then 
+    if [ "$2" == "--sync" ]; then 
         rm ./${root}/Prep/${root}_phot.fits
         rm ./${root}/Prep/${root}-ir*
         rm ./${root}/Prep/${root}-*psf*
@@ -130,6 +130,32 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
                           --exclude "Prep/FineBkup/*" \
                           --acl public-read \
                           ./${root} s3://${BUCKET}/Pipeline/${root}
+
+# Do we have beams files and/or redshift fit outputs?
+nbeams=`ls ${root}/Extractions/ |grep -c beams.fits`
+nfull=`ls ${root}/Extractions/ |grep -c full.fits`
+
+if [ $nbeams -gt 0 ] && [ $nbeams -ne $nfull ]; then
+    
+    echo "Run redshift fit (nbeams=${nbeams}, nfull=${nfull})"
+    
+    # Run the lambda function
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True
+    
+    # Generate catalog
+    cd ${root}/Extractions/
+    
+    aws s3 sync --exclude "*" --include "${root}*full.fits" --include "${root}*stack.png" --include "*cat.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
+    
+    grizli_extract_and_fit.py ${root} summary
+    
+    aws s3 sync --exclude "*" --include "${root}*fits" ./ s3://${BUCKET}/Pipeline/${root}/Extractions/ --acl public-read
+    aws s3 sync --exclude "*" --include "${root}*png" --include "${root}*reg" --include "*html" --acl public-read ./ s3://${BUCKET}/Pipeline/${root}/Extractions/
+    
+    # Back to initial directory
+    cd ../../
+    
+fi
 
 if [ -e /tmp/${root}.success ]; then 
     echo "${root}: Success"

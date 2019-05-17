@@ -183,8 +183,9 @@ gzip --force ${root}/Prep/${root}*_dr?_*fits
 gzip --force ${root}/Prep/${root}*_seg.fits
 gzip --force ${root}/Extractions/*grism*fits
 
+# Copies of segmentation image
 rm ${root}/Extractions/${root}*seg.fits
-cp ${root}/Prep/${root}*seg.fits.gz .
+cp ${root}/Prep/${root}*seg.fits.gz ${root}/Extractions/
 
 # Sync extractions
 #aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*flt.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://${BUCKET}/Pipeline/

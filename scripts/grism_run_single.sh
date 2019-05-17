@@ -191,7 +191,10 @@ if [ -e /tmp/${root}.success ]; then
     aws s3 cp ${root}.log s3://${BUCKET}/Pipeline/Log/Finished/
     aws s3 rm s3://${BUCKET}/Pipeline/Log/Failed/${root}.log
     
-    rm -rf /GrizliImaging/${root}*
+    if [ $clean -gt 0 ]; then
+        rm -rf /GrizliImaging/${root}*
+    fi
+    
 else
     echo "${root}: Fail..."
     echo "Failed:   `date`" > ${root}.log

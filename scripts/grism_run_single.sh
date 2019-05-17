@@ -1,13 +1,17 @@
 #!/bin/bash
 
+# grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True
+
+# To rerun and extract more sources
+# grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,25] --include_photometry_in_fit=True
+
 # Syncs from working directory on EC2 instance to S3 buket
 
 #BUCKET=aws-grivam
 #BUCKET=grizli-grism
 BUCKET=grizli
 
-if [ $# -eq 0 ]
-  then
+if [ $# -eq 0 ]; then
     echo "Usage:  $ grism_run_single j023507-040202"
     echo ""
     echo "Available: "
@@ -21,8 +25,22 @@ root=$1
 
 echo "Running on root=${root}"
 
+clean=1
+for i in "$@" ; do
+    if [[ $i == "--grism" ]] ; then
+        is_grism=1
+    elif [[ $i == "--sync" ]] ; then
+        is_sync=1
+    elif [[ $i == "--noclean" ]] ; then
+        clean=0
+    fi
+done
+
 # Initialize working directory
-rm -rf /GrizliImaging/${root}*
+if [ $clean -gt 0 ]; then
+    rm -rf /GrizliImaging/${root}*
+fi
+
 #mkdir /GrizliImaging
 #chmod ugoa+rwx /GrizliImaging
 cd /GrizliImaging
@@ -35,10 +53,14 @@ aws s3 rm s3://${BUCKET}/Pipeline/Log/Failed/${root}.log
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
-
-if [ "$2" == "--sync" ] || [ "$2" == "--grism" ]; then
+        
+if [ -n "${is_sync}" ] || [ -n == "${is_grism}" ]; then
     #aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
-    aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
+    if [ -n "${is_sync}" ]; then 
+        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*"
+    else
+        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
+    fi
     
     # Make directories
     
@@ -51,7 +73,7 @@ if [ "$2" == "--sync" ] || [ "$2" == "--grism" ]; then
     fi
     
     # If sync then clean previous files so that they'll be generated again
-    if [ "$2" == "--sync" ]; then 
+    if [ -n "${is_sync}" ]; then 
         rm ./${root}/Prep/${root}_phot.fits
         rm ./${root}/Prep/${root}-ir*
         rm ./${root}/Prep/${root}-*psf*

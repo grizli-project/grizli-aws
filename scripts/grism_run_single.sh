@@ -51,6 +51,7 @@ for i in "$@" ; do
         is_sync=1
     elif [[ $i == "--noclean" ]] ; then
         clean=0
+    fi
 done
 
 # Initialize working directory

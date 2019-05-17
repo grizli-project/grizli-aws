@@ -1,9 +1,27 @@
 #!/bin/bash
 
-# grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True
+# grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean
+# gunzip ${root}/*/*gz
 
-# To rerun and extract more sources
-# grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,25] --include_photometry_in_fit=True
+# Dummy loop for uncommented examples
+if [ -n "${xxx}" ]; then
+
+    # Initial processing
+    grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean
+    gunzip ${root}/*/*fits.gz
+
+    # Rerun and extract more sources
+    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[16,26] --include_photometry_in_fit=True --noclean
+    
+    # Individual ID
+    root=j022204m0412
+    BUCKET=grizli
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=235 --zr=0.1,9
+    
+    root=j123624p6214
+    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --extract_args.ids=[2728] --include_photometry_in_fit=True --noclean
+    
+fi
 
 # Syncs from working directory on EC2 instance to S3 buket
 
@@ -33,7 +51,6 @@ for i in "$@" ; do
         is_sync=1
     elif [[ $i == "--noclean" ]] ; then
         clean=0
-    fi
 done
 
 # Initialize working directory
@@ -54,7 +71,7 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
         
-if [ -n "${is_sync}" ] || [ -n == "${is_grism}" ]; then
+if [ -n "${is_sync}" ] || [ -n "${is_grism}" ]; then
     #aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
     if [ -n "${is_sync}" ]; then 
         aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*"

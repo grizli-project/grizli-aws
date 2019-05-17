@@ -19,7 +19,7 @@ if [ -n "${xxx}" ]; then
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=235 --zr=0.1,9
     
     root=j123624p6214
-    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --extract_args.ids=[2728] --include_photometry_in_fit=True --noclean
+    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --extract_args.ids=[2728] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1
     
 fi
 
@@ -103,7 +103,7 @@ if [ -n "${is_sync}" ] || [ -n "${is_grism}" ]; then
     fi 
     
     # Unzip zipped mosaics
-    gunzip ${root}/Prep/*fits.gz
+    gunzip ${root}/*/*fits.gz
     
     # Symlinks to force skip already complete
     files=`ls ./${root}/Prep/*wcs.log | sed "s/_wcs.log/_drz_sci.fits/"`

@@ -23,6 +23,8 @@ if [ -n "${xxx}" ]; then
 
     # Redo with F160W as reference
     grism_run_single.sh ${root} --sync --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728] --grism_prep_args.gris_ref_filters.G141=[F160W]
+
+    grism_run_single.sh ${root} --gris --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728] --grism_prep_args.gris_ref_filters.G141=[F160W]
     
 fi
 
@@ -180,6 +182,9 @@ echo "gzip mosaics"
 gzip --force ${root}/Prep/${root}*_dr?_*fits
 gzip --force ${root}/Prep/${root}*_seg.fits
 gzip --force ${root}/Extractions/*grism*fits
+
+rm ${root}/Extractions/${root}*seg.fits
+cp ${root}/Prep/${root}*seg.fits.gz .
 
 # Sync extractions
 #aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*flt.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://${BUCKET}/Pipeline/

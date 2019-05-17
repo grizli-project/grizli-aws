@@ -19,7 +19,10 @@ if [ -n "${xxx}" ]; then
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=235 --zr=0.1,9
     
     root=j123624p6214
-    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --extract_args.ids=[2728] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1
+    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728]
+
+    # Redo with F160W as reference
+    grism_run_single.sh ${root} --sync --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728] --grism_prep_args.gris_ref_filters.G141=[F160W]
     
 fi
 

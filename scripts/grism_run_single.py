@@ -189,7 +189,7 @@ def auto_run(root='j023507-040202', args=[]):
                         lval = val.replace('[','').replace(']','').split(',')
                         
                         # Item shoud be a list
-                        if (len(lval) < len(d[p])) & ('filter' not in p):
+                        if (len(lval) < len(d[p])) & ('filter' not in arg):
                             msg = 'Parameter {0} should be a list like {1}'
                             raise(ValueError(msg.format(arg, d[p])))
                         

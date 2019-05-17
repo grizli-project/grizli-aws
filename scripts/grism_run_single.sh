@@ -28,10 +28,6 @@ fi
 
 # Syncs from working directory on EC2 instance to S3 buket
 
-#BUCKET=aws-grivam
-#BUCKET=grizli-grism
-BUCKET=grizli
-
 if [ $# -eq 0 ]; then
     echo "Usage:  $ grism_run_single j023507-040202"
     echo ""
@@ -46,16 +42,28 @@ root=$1
 
 echo "Running on root=${root}"
 
+# Args
+is_grism=0
+is_sync=0
 clean=1
-for i in "$@" ; do
-    if [[ $i == "--grism" ]] ; then
+
+#BUCKET=aws-grivam
+#BUCKET=grizli-grism
+BUCKET=grizli
+
+for arg in "$@" ; do
+    if [[ $arg == "--grism" ]] ; then
         is_grism=1
-    elif [[ $i == "--sync" ]] ; then
+    elif [[ $arg == "--sync" ]] ; then
         is_sync=1
-    elif [[ $i == "--noclean" ]] ; then
+    elif [[ $arg == "--noclean" ]] ; then
         clean=0
+    elif [[ ! -z `echo "${arg}" | grep "bucket="` ]]; then 
+        BUCKET=`echo "${arg}" | sed "s/=/ /" | awk '{print $2}'`
     fi
 done
+
+echo "# ${root} is_grism=${is_grism}, is_sync=${is_sync}, clean=${clean}, BUCKET=${BUCKET}"
 
 # Initialize working directory
 if [ $clean -gt 0 ]; then
@@ -75,9 +83,9 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
         
-if [ -n "${is_sync}" ] || [ -n "${is_grism}" ]; then
+if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     #aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
-    if [ -n "${is_sync}" ]; then 
+    if [ $is_sync -gt 0 ]; then 
         aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*"
     else
         aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
@@ -94,7 +102,7 @@ if [ -n "${is_sync}" ] || [ -n "${is_grism}" ]; then
     fi
     
     # If sync then clean previous files so that they'll be generated again
-    if [ -n "${is_sync}" ]; then 
+    if [ $is_sync -gt 0 ]; then 
         rm ./${root}/Prep/${root}_phot.fits
         rm ./${root}/Prep/${root}-ir*
         rm ./${root}/Prep/${root}-*psf*
@@ -106,19 +114,24 @@ if [ -n "${is_sync}" ] || [ -n "${is_grism}" ]; then
     fi 
     
     # Unzip zipped mosaics
+    echo "gunzip files"
     gunzip --force ${root}/*/*fits.gz
     
     # Symlinks to force skip already complete
     files=`ls ./${root}/Prep/*wcs.log | sed "s/_wcs.log/_drz_sci.fits/"`
     for file in $files; do 
         echo $file
-        touch $file
+        if [ ! -e ${file} ]; then
+            touch $file
+        fi
     done
     
     files=`ls ./${root}/Prep/*_column.png | sed "s/_column.png/_drz_sci.fits/"`
     for file in $files; do 
         echo $file
-        touch $file
+        if [ ! -e ${file} ]; then
+            touch $file
+        fi
     done
     
     # Make fake copies of flt-raw files
@@ -128,10 +141,20 @@ if [ -n "${is_sync}" ] || [ -n "${is_grism}" ]; then
     for file in $files; do 
         out=`echo $file | sed "s/_flt/_raw/"`
         echo $file $out
-        ln -s ../Prep/$file $out
-        cp ../Prep/${file} .
+        
+        if [ ! -e ${out} ]; then 
+            ln -s ../Prep/$file $out
+        fi
+        
+        if [ ! -e "${file}" ]; then 
+            cp ../Prep/${file} .
+        fi
+        
     done
+    
     cp ../Prep/*flc.fits .
+    
+    # Back to root
     cd ../../
     
 fi

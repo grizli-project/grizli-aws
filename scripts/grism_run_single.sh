@@ -103,7 +103,7 @@ if [ -n "${is_sync}" ] || [ -n "${is_grism}" ]; then
     fi 
     
     # Unzip zipped mosaics
-    gunzip ${root}/*/*fits.gz
+    gunzip --force ${root}/*/*fits.gz
     
     # Symlinks to force skip already complete
     files=`ls ./${root}/Prep/*wcs.log | sed "s/_wcs.log/_drz_sci.fits/"`
@@ -151,9 +151,9 @@ cp ${root}*yml ./${root}/Prep/
 
 echo "gzip mosaics"
 
-gzip ${root}/Prep/${root}*_dr?_*fits
-gzip ${root}/Prep/${root}*_seg.fits
-gzip ${root}/Extractions/*grism*fits
+gzip --force ${root}/Prep/${root}*_dr?_*fits
+gzip --force ${root}/Prep/${root}*_seg.fits
+gzip --force ${root}/Extractions/*grism*fits
 
 # Sync extractions
 #aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*flt.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://${BUCKET}/Pipeline/

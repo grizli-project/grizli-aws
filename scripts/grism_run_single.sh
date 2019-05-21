@@ -7,20 +7,22 @@
 if [ -n "${xxx}" ]; then
 
     # Initial processing
-    grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean
+    grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=False --noclean
     gunzip ${root}/*/*fits.gz
 
     # Rerun and extract more sources
-    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[16,26] --include_photometry_in_fit=True --noclean
+    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[16,25] --include_photometry_in_fit=False --noclean
     
     # Quasar templates
     BUCKET=grizli
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=295 --quasar_fit=True --output_path=self --use_psf=True
+    ids=303
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=False --sleep=True --ids=${ids} --quasar_fit=True --output_path=self --use_psf=False
     
     # Individual ID
     root=j022204m0412
     BUCKET=grizli
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=235 --zr=0.1,9
+    ids=235
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,9
 
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=2728 --zr=0.1,12
     
@@ -228,6 +230,7 @@ if [ $nbeams -gt 0 ]; then
     # Run the lambda function
     if [ $nbeams -ne $nfull ]; then 
         echo "Run redshift fit (nbeams=${nbeams}, nfull=${nfull})"
+        echo "fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --verbose=${lambda_verbose}"
         fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --verbose=${lambda_verbose}
     else
         echo "Make redshift catalog (nbeams=${nbeams}, nfull=${nfull})"

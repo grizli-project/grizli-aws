@@ -13,6 +13,10 @@ if [ -n "${xxx}" ]; then
     # Rerun and extract more sources
     grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[16,26] --include_photometry_in_fit=True --noclean
     
+    # Quasar templates
+    BUCKET=grizli
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=295 --quasar_fit=True --output_path=self --use_psf=True
+    
     # Individual ID
     root=j022204m0412
     BUCKET=grizli
@@ -50,6 +54,7 @@ echo "Running on root=${root}"
 is_grism=0
 is_sync=0
 clean=1
+lambda_verbose="False"
 
 #BUCKET=aws-grivam
 #BUCKET=grizli-grism
@@ -62,6 +67,8 @@ for arg in "$@" ; do
         is_sync=1
     elif [[ $arg == "--noclean" ]] ; then
         clean=0
+    elif [[ $arg == "--lambda_verbose" ]] ; then
+        lambda_verbose="True"
     elif [[ ! -z `echo "${arg}" | grep "bucket="` ]]; then 
         BUCKET=`echo "${arg}" | sed "s/=/ /" | awk '{print $2}'`
     fi
@@ -221,7 +228,7 @@ if [ $nbeams -gt 0 ]; then
     # Run the lambda function
     if [ $nbeams -ne $nfull ]; then 
         echo "Run redshift fit (nbeams=${nbeams}, nfull=${nfull})"
-        fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True
+        fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --verbose=${lambda_verbose}
     else
         echo "Make redshift catalog (nbeams=${nbeams}, nfull=${nfull})"
     fi

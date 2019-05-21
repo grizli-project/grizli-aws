@@ -17,6 +17,8 @@ if [ -n "${xxx}" ]; then
     root=j022204m0412
     BUCKET=grizli
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=235 --zr=0.1,9
+
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=2728 --zr=0.1,12
     
     root=j123624p6214
     grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728]
@@ -24,7 +26,7 @@ if [ -n "${xxx}" ]; then
     # Redo with F160W as reference
     grism_run_single.sh ${root} --sync --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728] --grism_prep_args.gris_ref_filters.G141=[F160W]
 
-    grism_run_single.sh ${root} --gris --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728] --grism_prep_args.gris_ref_filters.G141=[F160W]
+    grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,23] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1  --grism_prep_args.gris_ref_filters.G141=[F160W]
     
 fi
 
@@ -90,7 +92,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     if [ $is_sync -gt 0 ]; then 
         aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*"
     else
-        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/
+        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*1D*" --exclude "Extractions/*.R30*" --exclude "Extractions/*stack*" 
     fi
     
     # Make directories
@@ -111,8 +113,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
         rm ./${root}/Prep/*visits.npy
         rm ./${root}/Extractions/*
         
-        aws s3 rm --recursive --exclude "*" --include "Prep/${root}_phot.fits" --include "Prep/${root}-ir*" --include "Prep/${root}-*psf*" --include "Prep/*visits.npy" --include "Extractions/*" s3://${BUCKET}/Pipeline/${root}
-        
+        aws s3 rm --recursive --exclude "*" --include "Prep/${root}_phot.fits" --include "Prep/${root}-ir*" --include "Prep/${root}-*psf*" --include "Prep/*visits.npy" --include "Extractions/*" s3://${BUCKET}/Pipeline/${root}        
     fi 
     
     # Unzip zipped mosaics
@@ -183,6 +184,9 @@ gzip --force ${root}/Prep/${root}*_dr?_*fits
 gzip --force ${root}/Prep/${root}*_seg.fits
 gzip --force ${root}/Extractions/*grism*fits
 
+# echo "gzip exposures"
+# gzip --force ${root}/Prep/*_fl?.fits
+
 # Copies of segmentation image
 rm ${root}/Extractions/${root}*seg.fits
 cp ${root}/Prep/${root}*seg.fits.gz ${root}/Extractions/
@@ -191,7 +195,7 @@ cp ${root}/Prep/${root}*seg.fits.gz ${root}/Extractions/
 #aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*flt.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://${BUCKET}/Pipeline/
 
 aws s3 sync --exclude "*" --include "Prep/${root}*"   \
-                          --include "Prep/[ij]*_fl?.fits"  \
+                          --include "Prep/[ij]*_fl?.fits*"  \
                           --include "Prep/u*_c??.fits" \
                           --include "Prep/*fail*"     \
                           --include "Prep/*.reg"      \
@@ -202,6 +206,8 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
                           --include "RAW/*.png"       \
                           --include "RAW/*info"       \
                           --include "Extractions/*"   \
+                          --exclude "Extractions/templates*"   \
+                          --exclude "Extractions/FILTER*"   \
                           --exclude "Prep/FineBkup/*" \
                           --acl public-read \
                           ./${root} s3://${BUCKET}/Pipeline/${root}

@@ -102,20 +102,20 @@ def fit_lambda(root='j100025+021706', beams=[], newfunc=False, bucket_name='aws-
             Payload=json.dumps(event))
     
     # Sleep for status check    
-    if sleep:
+    beams, full, logs, start = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True, get_lists=True)
+    if (sleep) & (len(beams) > len(full)) & (len(beams) > 0):
         sleep_time = 303*np.ceil(len(beams)/950)
         print('{0}: sleep {1}'.format(time.ctime(), sleep_time))
     
         time.sleep(sleep_time)
     
         # Status again to check products
-        beams, full, logs, start = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True, get_lists=True)
-        
-        # Wait an extra 10 minutes checking if beams finish
+                
+        # Wait up to an extra 15 minutes checking if beams finish
         iter=0
-        while (len(beams) > len(full)) & (len(start) > 0) & (iter < 10):
+        while (len(beams) > len(full)) & (len(start) > 0) & (iter < 15):
             iter += 1
-            time.sleep(sleep_time)
+            time.sleep(61)
             beams, full, logs, start = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True, get_lists=True)
             
             

@@ -109,9 +109,18 @@ def fit_lambda(root='j100025+021706', beams=[], newfunc=False, bucket_name='aws-
         time.sleep(sleep_time)
     
         # Status again to check products
-        beams, files = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True)
-    
-def get_needed_paths(root, get_string=False, bucket_name='aws-grivam', skip_existing=True):
+        beams, full, logs, start = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True, get_lists=True)
+        
+        # Wait an extra 10 minutes checking if beams finish
+        iter=0
+        while (len(beams) > len(full)) & (len(start) > 0) & (iter < 10):
+            iter += 1
+            time.sleep(sleep_time)
+            beams, full, logs, start = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True, get_lists=True)
+            
+            
+        
+def get_needed_paths(root, get_string=False, bucket_name='aws-grivam', skip_existing=True, get_lists=False):
     """
     Get the S3 paths of the "beams.fits" files that still need to be fit.
     """
@@ -148,6 +157,9 @@ def get_needed_paths(root, get_string=False, bucket_name='aws-grivam', skip_exis
         
     print(label)
     
+    if get_lists:
+        return beams, full, logs, start
+        
     for i in range(len(beams))[::-1]:
         test = (beams[i].replace('.beams.fits', '.full.fits') in full)
         test |= (beams[i].replace('.beams.fits', '.start.log') in start)

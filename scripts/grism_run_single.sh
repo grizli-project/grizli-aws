@@ -10,6 +10,10 @@ if [ -n "${xxx}" ]; then
     grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=False --noclean
     gunzip ${root}/*/*fits.gz
 
+    # Refine based on initial fits
+    grism_run_single.sh ${root} --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=False --noclean --refine_with_fits=True --grism
+    gunzip ${root}/*/*fits.gz
+    
     # Rerun and extract more sources
     grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[16,25] --include_photometry_in_fit=False --noclean
     

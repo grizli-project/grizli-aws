@@ -57,7 +57,7 @@ RGB_PARAMS = {'xsize':4, 'rgb_min':-0.01, 'verbose':True, 'output_dpi': None, 'a
 
 #xsize=4, output_dpi=None, HOME_PATH=None, show_ir=False, pl=1, pf=1, scl=1, rgb_scl=[1, 1, 1], ds9=None, force_ir=False, filters=all_filters, add_labels=False, output_format='png', rgb_min=-0.01, xyslice=None, pure_sort=False, verbose=True, force_rgb=None, suffix='.rgb', scale_ab=scale_ab)
 
-def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, wcs=None, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w','f555w','f600lp', 'f390w', 'f350lp'], remove=True, rgb_params=RGB_PARAMS, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, thumb_height=2.0, sync_fits=True, subtract_median=True, include_saturated=True):
+def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, wcs=None, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w','f555w','f600lp', 'f390w', 'f350lp'], remove=True, rgb_params=RGB_PARAMS, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, thumb_height=2.0, sync_fits=True, subtract_median=True, include_saturated=True, include_ir_psf=False):
     """
     label='cp561356'; ra=150.208875; dec=1.850241667; size=40; filters=['f160w','f814w', 'f140w','f125w','f105w','f606w','f475w']
     
@@ -127,7 +127,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
     #tab = utils.read_catalog('{0}_visits.fits'.format(master))
     #all_visits = np.load('{0}_visits.npy'.format(master))[0]
     if parent is not None:
-        groups = np.load('{0}_filter_groups.npy'.format(master))[0]
+        groups = np.load('{0}_filter_groups.npy'.format(master), allow_pickle=True)[0]
     else:
         # Reformat local visits.npy into a groups file
         groups_files = glob.glob('*filter_groups.npy')
@@ -197,7 +197,13 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
         
         print('\n\n###\nMake filter: {0}'.format(filt))
         
-        status = utils.drizzle_from_visit(visits[0], h, pixfrac=pixfrac, kernel=kernel, clean=remove, include_saturated=include_saturated)
+        
+        if (filt.upper() in ['F105W','F125W','F140W','F160W']) & include_ir_psf:
+            clean_i = False
+        else:
+            clean_i = remove
+            
+        status = utils.drizzle_from_visit(visits[0], h, pixfrac=pixfrac, kernel=kernel, clean=clean_i, include_saturated=include_saturated)
         
         if status is not None:
             sci, wht, outh = status
@@ -220,7 +226,39 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
                            output_verify='fix')
             
             has_filts.append(filt)
-        
+            
+            if (filt.upper() in ['F105W','F125W','F140W','F160W']) & include_ir_psf:
+                from grizli.galfit.psf import DrizzlePSF
+                
+                hdu = pyfits.open('{0}-{1}_drz_sci.fits'.format(label, filt),
+                                  mode='update') 
+                
+                flt_files = [] #visits[0]['files']
+                for i in range(1, 10000):
+                    key = 'FLT{0:05d}'.format(i)
+                    if key not in hdu[0].header:
+                        break
+                    
+                    flt_files.append(hdu[0].header[key])
+                        
+                dp = DrizzlePSF(flt_files=flt_files, driz_hdu=hdu[0])
+                
+                psf = dp.get_psf(ra=dp.driz_wcs.wcs.crval[0],
+                                 dec=dp.driz_wcs.wcs.crval[1], 
+                                 filter=filt.upper(), 
+                                 pixfrac=dp.driz_header['PIXFRAC'], 
+                                 kernel=dp.driz_header['KERNEL'], 
+                                 wcs_slice=dp.driz_wcs, get_extended=True, 
+                                 verbose=False, get_weight=False)
+
+                psf[1].header['EXTNAME'] = 'PSF'
+                #psf[1].header['EXTVER'] = filt
+                hdu.append(psf[1])
+                hdu.flush()
+                
+                #psf.writeto('{0}-{1}_drz_sci.fits'.format(label, filt), 
+                #            overwrite=True, output_verify='fix')
+                
         #status = prep.drizzle_overlaps(visits, parse_visits=False, check_overlaps=True, pixfrac=pixfrac, skysub=False, final_wcs=True, final_wht_type='IVM', static=True, max_files=260, fix_wcs_system=True)
         # 
         # if len(glob.glob('{0}-{1}*sci.fits'.format(label, filt))):
@@ -281,7 +319,7 @@ def get_cutout_from_aws(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, m
           "ra": ra,
           "dec": dec,
           "scale_ab": scale_ab,
-          #"thumb_height": thumb_height,
+          "thumb_height": thumb_height,
           "aws_bucket":aws_bucket,
           "remove":remove,
           "master":master,

@@ -24,7 +24,7 @@ if [ -n "${xxx}" ]; then
     ids=235
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,9
 
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=2728 --zr=0.1,12
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,12
     
     root=j123624p6214
     grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728]
@@ -58,6 +58,8 @@ is_sync=0
 clean=1
 lambda_verbose="False"
 
+clean_full_fits=0
+
 #BUCKET=aws-grivam
 #BUCKET=grizli-grism
 BUCKET=grizli
@@ -71,6 +73,8 @@ for arg in "$@" ; do
         clean=0
     elif [[ $arg == "--lambda_verbose" ]] ; then
         lambda_verbose="True"
+    elif [[ $arg == "--refine_with_fits=True" ]] ; then
+        clean_full_fits=1
     elif [[ ! -z `echo "${arg}" | grep "bucket="` ]]; then 
         BUCKET=`echo "${arg}" | sed "s/=/ /" | awk '{print $2}'`
     fi
@@ -175,8 +179,20 @@ fi
 # rm -rf ./${root}/Prep/*fail*
 aws s3 rm --recursive --exclude "*" --include "*fail*" s3://${BUCKET}/Pipeline/${root}/Prep/
 
+# If refining the model based on the fits, remove "beams" locally 
+# and remove "full" on remote
+if [ $clean_full_fits -gt 0 ]; then
+    rm -rf /GrizliImaging/${root}/Extractions/*beams.fits
+    aws s3 rm --recursive --exclude "*" --include "*full.fits" s3://${BUCKET}/Pipeline/${root}/Extractions/
+fi
+
 ## Extractions
 grism_run_single.py $@ #${root} 
+
+# Now remove local full.fits if necessary so they won't be synced
+if [ $clean_full_fits -gt 0 ]; then
+    rm -rf /GrizliImaging/${root}/Extractions/*full.fits
+fi
 
 rm ${root}/Prep/*wcs-ref.fits
 rm ${root}/Prep/*bkg.fits

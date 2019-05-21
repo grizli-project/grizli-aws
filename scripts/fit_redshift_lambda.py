@@ -111,9 +111,9 @@ def fit_lambda(root='j100025+021706', beams=[], newfunc=False, bucket_name='aws-
     
         # Status again to check products
                 
-        # Wait up to an extra 15 minutes checking if beams finish
+        # Wait up to an extra 10 minutes checking if beams finish
         iter=0
-        while (len(beams) > len(full)) & (len(start) > 0) & (iter < 15):
+        while (len(beams) > len(full)) & (len(start) > 0) & (iter < 10):
             iter += 1
             time.sleep(61)
             beams, full, logs, start = get_needed_paths(root, bucket_name=bucket_name, skip_existing=True, get_lists=True)

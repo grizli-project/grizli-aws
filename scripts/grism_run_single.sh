@@ -18,8 +18,8 @@ if [ -n "${xxx}" ]; then
     grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[16,25] --include_photometry_in_fit=False --noclean
     
     # Quasar templates
-    BUCKET=grizli
     ids=303
+    BUCKET=grizli
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=False --sleep=True --ids=${ids} --quasar_fit=True --output_path=self --use_psf=False
     
     # Individual ID
@@ -28,6 +28,7 @@ if [ -n "${xxx}" ]; then
     ids=235
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,9
 
+    BUCKET=grizli
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,12
     
     root=j123624p6214
@@ -109,7 +110,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     if [ $is_sync -gt 0 ]; then 
         aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*"
     else
-        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*1D*" --exclude "Extractions/*.R30*" --exclude "Extractions/*stack*" 
+        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*1D*" --exclude "Extractions/*.R30*" --exclude "Extractions/*stack.fits" 
     fi
     
     # Make directories

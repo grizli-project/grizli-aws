@@ -188,7 +188,8 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
             h['CRPIX2'] -= 0.5
 
             for k in ['CD1_1', 'CD1_2', 'CD2_1', 'CD2_2']:
-                h[k] /= 2
+                if k in h:
+                    h[k] /= 2
 
             #data = np.zeros((h['NAXIS2'], h['NAXIS1']), dtype=np.int16)
                         

@@ -237,6 +237,8 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
                           --include "RAW/*info"       \
                           --include "Thumbnails/*"   \
                           --include "Extractions/*"   \
+                          --exclude "Prep/*_[0-9]*.thumb*"   \
+                          --exclude "Prep/*_[0-9]*.rgb*"   \
                           --exclude "Extractions/templates*"   \
                           --exclude "Extractions/FILTER*"   \
                           --exclude "Prep/FineBkup/*" \

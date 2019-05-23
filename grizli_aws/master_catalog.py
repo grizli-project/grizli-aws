@@ -231,22 +231,26 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     
     N = len(fit)
     aws_col = {}
-    for c in ['png_stack', 'png_full', 'png_line']:
+    for c in ['png_stack', 'png_full', 'png_line', 'png_rgb']:
         aws_col[c] = []
     
     bucket='aws-grivam'
     bucket='grizli-grism'
-        
+    bucket='grizli'
+      
     for i in range(N):
         root = fit['root'][i]
         
         aws = 'https://s3.amazonaws.com/{0}/Pipeline/{1}/Extractions/{1}'.format(bucket, root)
         
         for c in ['png_stack', 'png_full', 'png_line']:
-            pre = fit[c][i]
+            pre = fit[c].filled()[i]
             aws_col[c].append(pre.replace(root, aws).replace(root, root.replace('+','%2B')))
-            
-    for c in ['png_stack', 'png_full', 'png_line']:
+        
+        pre = fit['png_rgb'].filled()[i]
+        aws_col['png_rgb'].append(pre.replace('../Thumbnails/', '').replace(root, aws).replace('Extractions', 'Thumbnails').replace(root,  root.replace('+','%2B')))
+        
+    for c in ['png_stack', 'png_full', 'png_line', 'png_rgb']:
         fit['aws_'+c] = aws_col[c]
     
     fit['aws_png_sed'] = [l.replace('full.png','sed.png') for l in fit['aws_png_full']]
@@ -327,7 +331,7 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     for l in ['Ha','OIII','Hb','OII','SIII']:
         fit['sn_'+l].format = '.1f'
     
-    cols = ['root', 'idx','ra', 'dec', 't_g800l', 't_g102', 't_g141', 'mag_auto', 'use_spec', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zw1', 'ok_width', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_line']
+    cols = ['root', 'idx','ra', 'dec', 't_g800l', 't_g102', 't_g141', 'mag_auto', 'use_spec', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zw1', 'ok_width', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_rgb', 'aws_png_line']
     
     for g in ['g102', 'g141', 'g800l']:
         if 't_'+g in fit.colnames:
@@ -347,7 +351,7 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     if 'sparcs' in outroot:
         cols += ['aws_png_sed']
         
-    filter_cols = ['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'flux_radius', 'zw1', 'use_spec', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 't_g800l', 't_g102', 't_g141']
+    filter_cols = ['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'flux_radius', 'zw1', 'use_spec', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 't_g800l', 't_g102', 't_g141']
     
     if False:
         clip = (fit['bic_diff'] > 20) & (fit['chinu'] < 2) & (fit['zwidth1'] < 0.01)
@@ -367,6 +371,26 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     
     print('aws s3 cp {0}.fits s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
     
+    if False:
+        leg = utils.read_catalog('../../Cutouts/legac_meeting.cat')  
+        idx, dr = fit.match_to_catalog_sky(leg)  
+        clip = (dr.value < 0.4) 
+        
+        f = fit[idx][clip]
+        f['z_spec'] = leg['z_spec'][clip]
+        f['legac_id'] = ['m{0}_{1}'.format(m, i) for m, i in zip(leg['mask'][clip], leg['id'][clip])]
+        f['legac_use'] = leg['use'][clip]
+        
+        lc = cols.copy()
+        
+        for c in ['legac_id', 'legac_use', 'z_spec'][::-1]:
+            lc.insert(3, c)
+        
+        f['legac_use'].format = '0d'
+        f['z_spec'].format = '.4f'
+        
+        f[lc].filled(fill_value=-1).write_sortable_html('may2019_legac.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=filter_cols, use_json=False)
+        
     ######################
     # use_spec versions
     outroot += '.use_spec'

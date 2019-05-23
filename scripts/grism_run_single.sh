@@ -108,9 +108,9 @@ aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
 if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     #aws s3 sync --exclude "*" --include "Prep/${root}*sci.fits.gz" --include "Prep/${root}-ir*" --include "Prep/${root}*phot.fits" --include "Prep/${root}*psf.fits*" s3://${BUCKET}/Pipeline/${root}/ ./${root}/
     if [ $is_sync -gt 0 ]; then 
-        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*"
+        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*" --exclude "Thumbnails/*fits"
     else
-        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*1D*" --exclude "Extractions/*.R30*" --exclude "Extractions/*stack.fits" 
+        aws s3 sync s3://${BUCKET}/Pipeline/${root}/ ./${root}/ --include "*" --exclude "Extractions/*1D*" --exclude "Extractions/*.R30*" --exclude "Extractions/*stack.fits" --exclude "Thumbnails/*fits"
     fi
     
     # Make directories

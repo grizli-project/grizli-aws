@@ -160,7 +160,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
     
     has_filts = []
     lower_filters = [f.lower() for f in filters]
-    for filt.lower() in lower_filters:
+    for filt in lower_filters:
         if filt not in groups:
             continue
         

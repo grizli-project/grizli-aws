@@ -486,16 +486,6 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
             ax = fig.add_subplot(1,NX,i+1)
             ax.imshow(255-image, origin='lower', interpolation='nearest')
                         
-            if filter in ['uv', 'visb', 'visr', 'y', 'j', 'h']:
-                grouped_filters = []
-                h_i = ims[filter][0].header
-                for i in range(h_i['NCOMBINE']):
-                    grouped_filters.append(h_i['CFILT{0}'.format(i+1)])
-                    
-                ax.text(0.05, 0.95, '+'.join(grouped_filters), ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
-            else:
-                ax.text(0.05, 0.95, filter, ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
-    
     for ax in fig.axes:
         ax.set_xticklabels([])
         ax.set_yticklabels([])
@@ -504,6 +494,23 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
     
     fig.tight_layout(pad=0.1)
     
+    # Add labels
+    for i, filter in enumerate(filters):
+        if filter in ims:
+            if filter in ['uv', 'visb', 'visr', 'y', 'j', 'h']:
+                grouped_filters = []
+                h_i = ims[filter][0].header
+                for i in range(h_i['NCOMBINE']):
+                    grouped_filters.append(h_i['CFILT{0}'.format(i+1)])
+                
+                text_label = '+'.join(grouped_filters)
+            else:
+                text_label = filter
+
+            fig.text((i+0.5)/NX, 0.95, text_label, fontsize=7, 
+                     ha='center', va='top', transform=fig.Figure, 
+                     bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
+                     
     fig.savefig('{0}.thumb.png'.format(label))
     if close:
         plt.close()

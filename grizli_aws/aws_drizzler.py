@@ -211,6 +211,9 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
             
             if subtract_median:
                 med = np.median(sci[sci != 0])
+                if not np.isfinite(med):
+                    med = 0.
+                
                 print('\n\nMedian {0} = {1:.3f}\n\n'.format(filt, med))
                 outh['IMGMED'] = (med, 'Median subtracted from the image')
             else:

@@ -30,6 +30,7 @@ if [ -n "${xxx}" ]; then
 
     BUCKET=grizli
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,12 --verbose=True
+    aws s3 ls s3://${BUCKET}/Pipeline/${root}/Extractions/ |grep full.fits | sort -k 1 -k 2
     
     root=j123624p6214
     grism_run_single.sh ${root} --grism --run_extractions=True --extract_args.maglim=[17,21] --include_photometry_in_fit=True --noclean --parse_visits_args.combine_minexp=1 --extract_args.ids=[2728]

@@ -367,8 +367,8 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
     """
     import glob
     import numpy as np
-    
     import astropy.io.fits as pyfits
+    from grizli import utils
     
     filter_queries = {}
     filter_queries['uv'] = '{0}-f[2-3]*sci.fits'.format(label)

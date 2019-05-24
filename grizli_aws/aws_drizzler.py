@@ -381,8 +381,6 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
     grouped_fiters = {}
     
     for qfilt in filter_queries:
-        if qfilt not in filters:
-            continue
 
         drz_files = glob.glob(filter_queries[qfilt])
         drz_files.sort()

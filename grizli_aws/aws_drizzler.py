@@ -57,7 +57,7 @@ RGB_PARAMS = {'xsize':4, 'rgb_min':-0.01, 'verbose':True, 'output_dpi': None, 'a
 
 #xsize=4, output_dpi=None, HOME_PATH=None, show_ir=False, pl=1, pf=1, scl=1, rgb_scl=[1, 1, 1], ds9=None, force_ir=False, filters=all_filters, add_labels=False, output_format='png', rgb_min=-0.01, xyslice=None, pure_sort=False, verbose=True, force_rgb=None, suffix='.rgb', scale_ab=scale_ab)
 
-def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, wcs=None, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w','f814w', 'f140w','f125w','f105w','f110w','f098m','f850lp', 'f775w', 'f606w','f475w','f555w','f600lp', 'f390w', 'f350lp'], remove=True, rgb_params=RGB_PARAMS, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, thumb_height=2.0, sync_fits=True, subtract_median=True, include_saturated=True, include_ir_psf=False):
+def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixscale=0.06, size=10, wcs=None, pixfrac=0.8, kernel='square', theta=0, half_optical_pixscale=False, filters=['f160w', 'f140w', 'f125w', 'f105w', 'f110w', 'f098m', 'f850lp', 'f814w', 'f775w', 'f606w', 'f475w', 'f555w', 'f600lp', 'f390w', 'f350lp'], remove=True, rgb_params=RGB_PARAMS, master='grizli-jan2019', aws_bucket='s3://grizli/CutoutProducts/', scale_ab=21, thumb_height=2.0, sync_fits=True, subtract_median=True, include_saturated=True, include_ir_psf=False, show_filters=['visb', 'visr', 'y', 'j', 'h'], combine_similar_filters=True):
     """
     label='cp561356'; ra=150.208875; dec=1.850241667; size=40; filters=['f160w','f814w', 'f140w','f125w','f105w','f606w','f475w']
     
@@ -263,7 +263,9 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
         # 
         # if len(glob.glob('{0}-{1}*sci.fits'.format(label, filt))):
         #     has_filts.append(filt)
-            
+        
+        if combine_similar_filters:
+            combine_filters(label=label)    
         if remove:
             os.system('rm *_fl*fits')
          
@@ -359,6 +361,80 @@ def handler(event, context):
     print(event) #['s3_object_path'], event['verbose'])
     drizzle_images(**event)
 
+def combine_filters(label='j022708p4901_00273', verbose=True):
+    """
+    Group nearby filters
+    """
+    import glob
+    import numpy as np
+    
+    import astropy.io.fits as pyfits
+    
+    filter_queries = {}
+    filter_queries['uv'] = '{0}-f[2-3]*sci.fits'.format(label)
+    filter_queries['visb'] = '{0}-f[4-5]*sci.fits'.format(label)
+    filter_queries['visr'] = '{0}-f[6-8]*sci.fits'.format(label)
+    filter_queries['y'] = '{0}-f[01][90][85]*sci.fits'.format(label)
+    filter_queries['j'] = '{0}-f1[12][05]*sci.fits'.format(label)
+    filter_queries['h'] = '{0}-f1[64]0*sci.fits'.format(label)
+    
+    grouped_fiters = {}
+    
+    for qfilt in filter_queries:
+        if qfilt not in filters:
+            continue
+
+        drz_files = glob.glob(filter_queries[qfilt])
+        drz_files.sort()
+        grouped_filters[qfilt] = [f.split('_dr')[0].split('-')[-1] for f in drz_files]
+        
+        if len(drz_files) > 0:
+            drz_files.sort()
+            
+            if verbose:
+                print('# Combine filters, {0}={1}'.format(qfilt, 
+                                      '+'.join(drz_files)))
+                
+            for i, file in enumerate(drz_files[::-1]):
+                drz = pyfits.open(file)
+                wht = pyfits.open(file.replace('_sci','_wht'))
+                sci = drz[0].data*1.
+                
+                # Subtract background?
+                if 'IMGMED' in drz[0].header:
+                    sci -= drz[0].header
+                    drz[0].header['IMGMED'] = 0.
+                    
+                if i == 0:
+                    photflam = drz[0].header['PHOTFLAM']
+                
+                    num = sci*wht[0].data
+                    den = wht[0].data
+                    drz_ref = drz
+                    drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
+                    
+                else:
+                    scl = drz[0].header['PHOTFLAM']/photflam
+                    num += sci/scl*(wht[0].data*scl**2)
+                    den += wht[0].data*scl**2
+                    
+                    drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
+                    
+            sci = num/den
+            sci[den == 0] = 0
+            drz_ref[0].data  = sci
+            ims[qfilt] = drz_ref
+            
+            pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, qfilt), 
+                           data=sci, header=drz_ref[0].header, overwrite=True, 
+                           output_verify='fix')
+            
+            pyfits.writeto('{0}-{1}_drz_wht.fits'.format(label, qfilt), 
+                           data=den, header=drz_ref[0].header, overwrite=True, 
+                           output_verify='fix')
+    
+    return grouped_filters
+    
 def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y', 'j', 'h'], scale_ab=21, close=True, thumb_height=2., rgb_params=RGB_PARAMS):
     """
     Show individual filter and RGB thumbnails
@@ -391,63 +467,6 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
     if close:
         plt.close()
     
-    filter_queries = {}
-    filter_queries['uv'] = '{0}-f[2-3]*sci.fits'.format(label)
-    filter_queries['visb'] = '{0}-f[4-5]*sci.fits'.format(label)
-    filter_queries['visr'] = '{0}-f[6-8]*sci.fits'.format(label)
-    filter_queries['y'] = '{0}-f[01][90][85]*sci.fits'.format(label)
-    filter_queries['j'] = '{0}-f1[12][05]*sci.fits'.format(label)
-    filter_queries['h'] = '{0}-f1[64]0*sci.fits'.format(label)
-    
-    grouped_fiters = {}
-    
-    for qfilt in filter_queries:
-        if qfilt not in filters:
-            continue
-
-        drz_files = glob.glob(filter_queries[qfilt])
-        drz_files.sort()
-        grouped_filters[qfilt] = [f.split('_dr')[0].split('-')[-1] for f in drz_files]
-        
-        if len(drz_files) > 0:
-            drz_files.sort()
-            
-            for i, file in enumerate(drz_files[::-1]):
-                drz = pyfits.open(file)
-                wht = pyfits.open(file.replace('_sci','_wht'))
-                sci = drz[0].data*1.
-                if 'IMGMED' in drz[0].header:
-                    sci -= drz[0].header
-                    drz[0].header['IMGMED'] = 0.
-                    
-                if i == 0:
-                    photflam = drz[0].header['PHOTFLAM']
-                
-                    num = *wht[0].data
-                    den = wht[0].data
-                    drz_ref = drz
-                    drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
-                    
-                else:
-                    scl = drz[0].header['PHOTFLAM']/photflam
-                    num += sci/scl*(wht[0].data*scl**2)
-                    den += wht[0].data*scl**2
-                    
-                    drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
-                    
-            sci = num/den
-            sci[den == 0] = 0
-            drz_ref[0].data  = sci
-            ims[qfilt] = drz_ref
-            
-            pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, qfilt), 
-                           data=sci, header=drz_ref[0].header, overwrite=True, 
-                           output_verify='fix')
-            
-            pyfits.writeto('{0}-{1}_drz_wht.fits'.format(label, qfilt), 
-                           data=den, header=drz_ref[0].header, overwrite=True, 
-                           output_verify='fix')
-            
     #rgb = np.array(Image.open('{0}.rgb.png'.format(label)))
     rgb = plt.imread('{0}.rgb.png'.format(label))
     

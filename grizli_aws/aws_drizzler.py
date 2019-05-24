@@ -378,7 +378,7 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
     filter_queries['j'] = '{0}-f1[12][05]*sci.fits'.format(label)
     filter_queries['h'] = '{0}-f1[64]0*sci.fits'.format(label)
     
-    grouped_fiters = {}
+    grouped_filters = {}
     
     for qfilt in filter_queries:
 

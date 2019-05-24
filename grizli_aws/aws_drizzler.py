@@ -508,7 +508,7 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
                 text_label = filter
 
             fig.text((i+0.5)/NX, 0.95, text_label, fontsize=7, 
-                     ha='center', va='top', transform=fig.Figure, 
+                     ha='center', va='top', transform=fig.transFigure, 
                      bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
                      
     fig.savefig('{0}.thumb.png'.format(label))

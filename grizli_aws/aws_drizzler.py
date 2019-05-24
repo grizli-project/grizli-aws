@@ -500,8 +500,8 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
             if filter in ['uv', 'visb', 'visr', 'y', 'j', 'h']:
                 grouped_filters = []
                 h_i = ims[filter][0].header
-                for i in range(h_i['NCOMBINE']):
-                    grouped_filters.append(h_i['CFILT{0}'.format(i+1)])
+                for j in range(h_i['NCOMBINE']):
+                    grouped_filters.append(h_i['CFILT{0}'.format(j+1)])
                 
                 text_label = '+'.join(grouped_filters)
             else:

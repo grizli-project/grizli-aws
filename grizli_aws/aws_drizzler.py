@@ -400,7 +400,7 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
                 
                 # Subtract background?
                 if 'IMGMED' in drz[0].header:
-                    sci -= drz[0].header
+                    sci -= drz[0].header['IMGMED']
                     drz[0].header['IMGMED'] = 0.
                     
                 if i == 0:

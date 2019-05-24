@@ -485,14 +485,7 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
             
             ax = fig.add_subplot(1,NX,i+1)
             ax.imshow(255-image, origin='lower', interpolation='nearest')
-            
-            filter_queries['uv'] = '{0}-f[2-3]*sci.fits'.format(label)
-            filter_queries['visb'] = '{0}-f[4-5]*sci.fits'.format(label)
-            filter_queries['visr'] = '{0}-f[6-8]*sci.fits'.format(label)
-            filter_queries['y'] = '{0}-f[01][90][85]*sci.fits'.format(label)
-            filter_queries['j'] = '{0}-f1[12][05]*sci.fits'.format(label)
-            filter_queries['h'] = '{0}-f1[64]0*sci.fits'.format(label)
-            
+                        
             if filter in ['uv', 'visb', 'visr', 'y', 'j', 'h']:
                 grouped_filters = []
                 h_i = ims[filter][0].header

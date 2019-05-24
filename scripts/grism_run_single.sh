@@ -206,7 +206,8 @@ rm ${root}/Prep/*ctx.fits
 rm ${root}/Prep/astrodrizzle.log
 rm -rf ${root}/Prep/FineBkup
 
-cp ${root}.auto_script.log ./${root}/Prep/
+cp ${root}.auto_script.log.txt ./${root}/Prep/
+cp ${root}/RAW/*.txt ./${root}/Prep/
 cp ${root}*yml ./${root}/Prep/
 
 echo "gzip mosaics"
@@ -231,6 +232,7 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
                           --include "Prep/*fail*"     \
                           --include "Prep/*.reg"      \
                           --include "Prep/*.log"      \
+                          --include "Prep/*.txt"      \
                           --include "Prep/*.png"      \
                           --include "Prep/*.radec"    \
                           --include "Prep/*fine*"     \

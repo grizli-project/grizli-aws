@@ -409,14 +409,14 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
                     num = sci*wht[0].data
                     den = wht[0].data
                     drz_ref = drz
-                    drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
+                    drz_ref[0].header['CFILT{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
                     drz_ref[0].header['NCOMBINE'] = (len(drz_files), 'Number of combined filters')
                 else:
                     scl = drz[0].header['PHOTFLAM']/photflam
                     num += sci/scl*(wht[0].data*scl**2)
                     den += wht[0].data*scl**2
                     
-                    drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
+                    drz_ref[0].header['CFILT{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
                     drz_ref[0].header['NDRIZIM'] += drz[0].header['NDRIZIM']
                     
             sci = num/den
@@ -490,7 +490,7 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
                 grouped_filters = []
                 h_i = ims[filter][0].header
                 for i in range(h_i['NCOMBINE']):
-                    grouped_filters.append(h_i['FILTER{0}'.format(i+1)])
+                    grouped_filters.append(h_i['CFILT{0}'.format(i+1)])
                     
                 ax.text(0.05, 0.95, '+'.join(grouped_filters), ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
             else:

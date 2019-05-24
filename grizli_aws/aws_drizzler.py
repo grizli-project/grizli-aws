@@ -413,8 +413,8 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
                     drz_ref[0].header['NCOMBINE'] = (len(drz_files), 'Number of combined filters')
                 else:
                     scl = drz[0].header['PHOTFLAM']/photflam
-                    num += sci/scl*(wht[0].data*scl**2)
-                    den += wht[0].data*scl**2
+                    num += sci*scl*(wht[0].data/scl**2)
+                    den += wht[0].data/scl**2
                     
                     drz_ref[0].header['CFILT{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
                     drz_ref[0].header['NDRIZIM'] += drz[0].header['NDRIZIM']

@@ -421,7 +421,6 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
             sci = num/den
             sci[den == 0] = 0
             drz_ref[0].data  = sci
-            ims[qfilt] = drz_ref
             
             pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, qfilt), 
                            data=sci, header=drz_ref[0].header, overwrite=True, 

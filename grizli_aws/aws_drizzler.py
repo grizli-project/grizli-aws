@@ -410,13 +410,14 @@ def combine_filters(label='j022708p4901_00273', verbose=True):
                     den = wht[0].data
                     drz_ref = drz
                     drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
-                    
+                    drz_ref[0].header['NCOMBINE'] = (len(drz_files), 'Number of combined filters')
                 else:
                     scl = drz[0].header['PHOTFLAM']/photflam
                     num += sci/scl*(wht[0].data*scl**2)
                     den += wht[0].data*scl**2
                     
                     drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
+                    drz_ref[0].header['NDRIZIM'] += drz[0].header['NDRIZIM']
                     
             sci = num/den
             sci[den == 0] = 0
@@ -485,7 +486,19 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
             ax = fig.add_subplot(1,NX,i+1)
             ax.imshow(255-image, origin='lower', interpolation='nearest')
             
-            if filter in filter_queries:
+            filter_queries['uv'] = '{0}-f[2-3]*sci.fits'.format(label)
+            filter_queries['visb'] = '{0}-f[4-5]*sci.fits'.format(label)
+            filter_queries['visr'] = '{0}-f[6-8]*sci.fits'.format(label)
+            filter_queries['y'] = '{0}-f[01][90][85]*sci.fits'.format(label)
+            filter_queries['j'] = '{0}-f1[12][05]*sci.fits'.format(label)
+            filter_queries['h'] = '{0}-f1[64]0*sci.fits'.format(label)
+            
+            if filter in ['uv', 'visb', 'visr', 'y', 'j', 'h']:
+                grouped_filters = []
+                h_i = ims[filter][0].header
+                for i in range(len(h_i['NCOMBINE'])):
+                    grouped_filters.append(h_i['FILTER{0}'.format(i+1)])
+                    
                 ax.text(0.05, 0.95, '+'.join(grouped_filters), ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
             else:
                 ax.text(0.05, 0.95, filter, ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))

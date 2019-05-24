@@ -159,8 +159,8 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
     #filters = ['f160w','f814w', 'f110w', 'f098m', 'f140w','f125w','f105w','f606w', 'f475w']
     
     has_filts = []
-    
-    for filt in filters:
+    lower_filters = [f.lower() for f in filters]
+    for filt.lower() in lower_filters:
         if filt not in groups:
             continue
         
@@ -212,11 +212,10 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
             if subtract_median:
                 med = np.median(sci[sci != 0])
                 print('\n\nMedian {0} = {1:.3f}\n\n'.format(filt, med))
-                sci -= med
                 outh['IMGMED'] = (med, 'Median subtracted from the image')
             else:
                 med = 0.
-                outh['IMGMED'] = (med, 'Median subtracted from the image')
+                outh['IMGMED'] = (0., 'Median subtracted from the image')
                 
             pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, filt), 
                            data=sci, header=outh, overwrite=True, 
@@ -360,7 +359,7 @@ def handler(event, context):
     print(event) #['s3_object_path'], event['verbose'])
     drizzle_images(**event)
 
-def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105w','f110w','f125w','f140w','f160w'], scale_ab=21, close=True, thumb_height=2., rgb_params=RGB_PARAMS):
+def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y', 'j', 'h'], scale_ab=21, close=True, thumb_height=2., rgb_params=RGB_PARAMS):
     """
     Show individual filter and RGB thumbnails
     """
@@ -393,15 +392,22 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105
         plt.close()
     
     filter_queries = {}
-    filter_queries['vis'] = '{0}-f[3-8]*sci.fits'.format(label)
+    filter_queries['uv'] = '{0}-f[2-3]*sci.fits'.format(label)
+    filter_queries['visb'] = '{0}-f[4-5]*sci.fits'.format(label)
+    filter_queries['visr'] = '{0}-f[6-8]*sci.fits'.format(label)
     filter_queries['y'] = '{0}-f[01][90][85]*sci.fits'.format(label)
     filter_queries['j'] = '{0}-f1[12][05]*sci.fits'.format(label)
     filter_queries['h'] = '{0}-f1[64]0*sci.fits'.format(label)
     
-    if 'vis' in filters:
-        drz_files = glob.glob('{0}-f[3-8]*sci.fits'.format(label))
+    grouped_fiters = {}
+    
+    for qfilt in filter_queries:
+        if qfilt not in filters:
+            continue
+
+        drz_files = glob.glob(filter_queries[qfilt])
         drz_files.sort()
-        vis_filters = [f.split('_dr')[0].split('-')[-1] for f in drz_files]
+        grouped_filters[qfilt] = [f.split('_dr')[0].split('-')[-1] for f in drz_files]
         
         if len(drz_files) > 0:
             drz_files.sort()
@@ -409,31 +415,36 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105
             for i, file in enumerate(drz_files[::-1]):
                 drz = pyfits.open(file)
                 wht = pyfits.open(file.replace('_sci','_wht'))
+                sci = drz[0].data*1.
+                if 'IMGMED' in drz[0].header:
+                    sci -= drz[0].header
+                    drz[0].header['IMGMED'] = 0.
+                    
                 if i == 0:
                     photflam = drz[0].header['PHOTFLAM']
                 
-                    num = drz[0].data*wht[0].data
+                    num = *wht[0].data
                     den = wht[0].data
                     drz_ref = drz
                     drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
                     
                 else:
                     scl = drz[0].header['PHOTFLAM']/photflam
-                    num += drz[0].data*wht[0].data/scl
-                    den += wht[0].data/scl**2
+                    num += sci/scl*(wht[0].data*scl**2)
+                    den += wht[0].data*scl**2
                     
                     drz_ref[0].header['FILTER{0}'.format(i+1)] = utils.get_hst_filter(drz[0].header)
                     
             sci = num/den
             sci[den == 0] = 0
             drz_ref[0].data  = sci
-            ims['vis'] = drz_ref
+            ims[qfilt] = drz_ref
             
-            pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, 'vis'), 
+            pyfits.writeto('{0}-{1}_drz_sci.fits'.format(label, qfilt), 
                            data=sci, header=drz_ref[0].header, overwrite=True, 
                            output_verify='fix')
             
-            pyfits.writeto('{0}-{1}_drz_wht.fits'.format(label, 'vis'), 
+            pyfits.writeto('{0}-{1}_drz_wht.fits'.format(label, qfilt), 
                            data=den, header=drz_ref[0].header, overwrite=True, 
                            output_verify='fix')
             
@@ -458,8 +469,8 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['vis','f098m','f105
             ax = fig.add_subplot(1,NX,i+1)
             ax.imshow(255-image, origin='lower', interpolation='nearest')
             
-            if filter == 'vis':
-                ax.text(0.05, 0.95, '+'.join(vis_filters), ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
+            if filter in filter_queries:
+                ax.text(0.05, 0.95, '+'.join(grouped_filters), ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
             else:
                 ax.text(0.05, 0.95, filter, ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
     

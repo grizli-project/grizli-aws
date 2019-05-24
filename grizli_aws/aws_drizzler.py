@@ -509,7 +509,7 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
             
             print('############', i, (i+0.5)/NX, text_label)
             
-            fig.text((i+0.5)/NX, 0.95, text_label, fontsize=7, 
+            fig.text((i+0.5)/NX, 0.97, text_label, fontsize=7, 
                      ha='center', va='top', transform=fig.transFigure, 
                      bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))
                      

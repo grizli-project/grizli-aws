@@ -489,7 +489,7 @@ def show_all_thumbnails(label='j022708p4901_00273', filters=['visb', 'visr', 'y'
             if filter in ['uv', 'visb', 'visr', 'y', 'j', 'h']:
                 grouped_filters = []
                 h_i = ims[filter][0].header
-                for i in range(len(h_i['NCOMBINE'])):
+                for i in range(h_i['NCOMBINE']):
                     grouped_filters.append(h_i['FILTER{0}'.format(i+1)])
                     
                 ax.text(0.05, 0.95, '+'.join(grouped_filters), ha='left', va='top', transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='w', edgecolor='None', alpha=0.9))

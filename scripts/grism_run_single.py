@@ -200,7 +200,9 @@ def auto_run(root='j023507-040202', args=[]):
                             
                         d[p] = lval
                         print('Runtime argument: {0} = {1}'.format(p, lval))
-                    elif 'ids' in arg:
+                    elif '.ids' in arg:
+                        print(arg, p, val)
+                        
                         if ',' in val:
                             val = np.cast[int](val.split(','))
                         

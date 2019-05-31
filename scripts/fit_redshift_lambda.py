@@ -214,7 +214,7 @@ if __name__ == "__main__":
             keypair = args.strip('--').split('=')
             
             # Booleans
-            if keypair[0] in ['newfunc','skip_existing','sleep','checkwcs','use_psf','verbose','skip_started','quasar_fit', 'show_event']:
+            if keypair[0] in ['newfunc','skip_existing','sleep','check_wcs','use_psf','verbose','skip_started','quasar_fit', 'show_event']:
                 if len(keypair) == 1:
                     kwargs[keypair[0]] = True
                 else:

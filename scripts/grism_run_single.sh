@@ -258,7 +258,7 @@ if [ $nbeams -gt 0 ]; then
     if [ $nbeams -ne $nfull ]; then 
         echo "Run redshift fit (nbeams=${nbeams}, nfull=${nfull})"
         echo "fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --verbose=${lambda_verbose}"
-        fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --verbose=${lambda_verbose}
+        fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --verbose=${lambda_verbose} --check_wcs=True
     else
         echo "Make redshift catalog (nbeams=${nbeams}, nfull=${nfull})"
     fi

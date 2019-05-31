@@ -79,6 +79,8 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
     from grizli import prep, utils
     from grizli.pipeline import auto_script
     
+    print('XXX drizzle: ', filters, show_filters)
+    
     if isinstance(ra, str):
         coo = SkyCoord('{0} {1}'.format(ra, dec), unit=(u.hour, u.deg))
         ra, dec = coo.ra.value, coo.dec.value

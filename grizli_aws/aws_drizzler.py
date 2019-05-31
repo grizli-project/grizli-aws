@@ -78,9 +78,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
     
     from grizli import prep, utils
     from grizli.pipeline import auto_script
-    
-    print('XXX drizzle: ', filters, show_filters)
-    
+        
     if isinstance(ra, str):
         coo = SkyCoord('{0} {1}'.format(ra, dec), unit=(u.hour, u.deg))
         ra, dec = coo.ra.value, coo.dec.value
@@ -280,7 +278,7 @@ def drizzle_images(label='macs0647-jd1', ra=101.9822125, dec=70.24326667, pixsca
     if rgb_params:
         #auto_script.field_rgb(root=label, HOME_PATH=None, filters=has_filts, **rgb_params)
         
-        show_all_thumbnails(label=label, thumb_height=thumb_height, scale_ab=scale_ab, close=True, rgb_params=rgb_params)
+        show_all_thumbnails(label=label, thumb_height=thumb_height, scale_ab=scale_ab, close=True, rgb_params=rgb_params, filters=show_filters)
         
     if aws_bucket:   
         #aws_bucket = 's3://grizli-cosmos/CutoutProducts/'

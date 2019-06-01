@@ -20,7 +20,7 @@ if [ -n "${xxx}" ]; then
     # Quasar templates
     ids=303
     BUCKET=grizli
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=False --sleep=True --ids=${ids} --quasar_fit=True --output_path=self --use_psf=False --verbose=True
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=False --sleep=True --ids=${ids} --quasar_fit=True --check_wcs=True --output_path=self --use_psf=False --verbose=True
     
     # Individual ID
     root=j022204m0412
@@ -174,7 +174,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
         
     done
     
-    cp ../Prep/*flc.fits .
+    cp ../Prep/*flc.fits ../RAW/
     
     # Back to root
     cd ../../

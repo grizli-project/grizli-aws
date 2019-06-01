@@ -127,7 +127,7 @@ def auto_run(root='j023507-040202', args=[]):
     kwargs['filters'] += default_params.IR_M_FILTERS
     
     # Optical filters.  Bluer than F555W often fail for low source counts?
-    kwargs['filters'] += ['F814W', 'F850LP', 'F775W', 'F625W', 'F606W', 'F555W', 'F350LP', 'F600LP']
+    kwargs['filters'] += ['F814W', 'F850LP', 'F775W', 'F625W', 'F606W', 'F555W', 'F350LP', 'F600LP', 'G800L']
     
     kwargs['is_parallel_field'] = IS_PARALLEL
     
@@ -168,7 +168,13 @@ def auto_run(root='j023507-040202', args=[]):
                     
                     # Next argument
                     continue
-                    
+                
+                if pspl == 'extra_filters':
+                    kwargs['filters'] += val.split(',')
+                    kwargs['filters'] = list(np.unique(kwargs['filters']))
+                    print('Extra filters: {0}'.format(val.split(',')))
+                    continue
+                        
                 # Split nested dictionaries by '.'
                 if '.' in pspl:
                     valid = False

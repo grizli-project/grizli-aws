@@ -174,6 +174,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
         
     done
     
+    echo "Copy FLC"
     cp ../Prep/*flc.fits ../RAW/
     
     # Back to root

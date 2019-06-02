@@ -29,7 +29,9 @@ if [ -n "${xxx}" ]; then
     fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,9
 
     BUCKET=grizli
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,12 --verbose=True
+    zr=0.1,12
+    zr=4,8
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=${zr} --verbose=True --check_wcs=True
     aws s3 ls s3://${BUCKET}/Pipeline/${root}/Extractions/ |grep full.fits | sort -k 1 -k 2
     
     root=j123624p6214

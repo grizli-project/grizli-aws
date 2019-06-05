@@ -1,4 +1,5 @@
-# #!/usr/bin/env python
+#!/usr/bin/env python
+
 # def fit_lambda(root='j100025+021706', beams=[], newfunc=False, bucket_name='aws-grivam', skip_existing=True, sleep=True, check_wcs=False, use_psf=False, verbose=False, skip_started=True, quasar_fit=False, zr=None, output_path=None, show_event=False, **kwargs):
 #     """
 #     check_wcs=True for ACS
@@ -168,7 +169,8 @@
 # 
 #         
 #     return beams, files
-    
+import os
+
 if __name__ == "__main__":
     import sys
     import yaml
@@ -178,12 +180,7 @@ if __name__ == "__main__":
     from grizli.pipeline import auto_script
     from grizli.aws.fit_redshift_lambda import fit_lambda
     
-    utils.set_warnings()
-    
-    if len(sys.argv) < 2:
-        print('Usage: fit_redshift_lambda.py {field}')
-        exit 
-    
+    utils.set_warnings()    
     
     root = sys.argv[1]
 
@@ -233,8 +230,8 @@ if __name__ == "__main__":
             
             # Everything else
             else:
-                if keypair[0] in kwargs:
-                    kwargs[keypair[0]] = keypair[1]
+                #if keypair[0] in kwargs:
+                kwargs[keypair[0]] = keypair[1]
     
     print('Arguments: \n\n', '  '+yaml.dump(kwargs).replace('\n', '\n   '))
     

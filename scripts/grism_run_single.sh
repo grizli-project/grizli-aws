@@ -230,7 +230,7 @@ cp ${root}/Prep/${root}*seg.fits.gz ${root}/Extractions/
 #aws s3 sync --exclude "*" --include "${root}/Prep/${root}*" --include "${root}/Prep/*flt.fits" --include "${root}/Prep/*.log" --include "${root}/Prep/*fine*" --include "${root}/Extractions/*" --acl public-read ./ s3://${BUCKET}/Pipeline/
 
 aws s3 sync --exclude "*" --include "Prep/${root}*"   \
-                          --include "Prep/[ij]*_fl?.fits*"  \
+                          --include "Prep/[ij]*_fl?.*fits*"  \
                           --include "Prep/u*_c??.fits" \
                           --include "Prep/*fail*"     \
                           --include "Prep/*.reg"      \

@@ -234,6 +234,7 @@ aws s3 sync --exclude "*" --include "Prep/${root}*"   \
                           --include "Prep/u*_c??.fits" \
                           --include "Prep/*fail*"     \
                           --include "Prep/*.reg"      \
+                          --include "Prep/*.cat.fits"      \
                           --include "Prep/*.log"      \
                           --include "Prep/*.txt"      \
                           --include "Prep/*.png"      \

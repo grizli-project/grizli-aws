@@ -261,6 +261,12 @@ def auto_run(root='j023507-040202', args=[]):
     # kwargs['multiband_catalog_args']['phot_apertures'] = phot_apertures 
     # kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = filter_kernel
     
+    # Master radec
+    if ('j021732m0512' in root) & ('preprocess_args.master_radec' not in args):
+        
+        os.system('aws s3 cp s3://grizli/AlignmentCatalogs/gaia_sxds-dud-HSCdr2_corr_uds.radec .')
+        kwargs['preprocess_args']['master_radec'] = '../../gaia_sxds-dud-HSCdr2_corr_uds.radec'
+        
     output_yml = '{0}.auto_script.yml'.format(root)
     auto_script.write_params_to_yml(kwargs, output_file=output_yml)
     

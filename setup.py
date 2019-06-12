@@ -2,6 +2,7 @@
 from setuptools import setup
 import glob
 import subprocess
+import shutil
 
 args = 'git describe --tags'
 p = subprocess.Popen(args.split(), stdout=subprocess.PIPE)
@@ -17,6 +18,12 @@ fp.write(version_str)
 fp.close()
 print('Git version: {0}'.format(version))
 
+# Install auto scripts
+files = glob.glob('auto_scripts/auto*')
+for file in files:
+    print('cp {0} /usr/local/bin/'.format(file))
+    shutil.copy(file, '/usr/local/bin/')
+    
 setup(name='grizli_aws',
       version=version,
       description='Grizli processing on AWS',

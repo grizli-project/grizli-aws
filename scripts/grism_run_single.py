@@ -262,17 +262,17 @@ def auto_run(root='j023507-040202', args=[]):
     # kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = filter_kernel
     
     # Master radec
-    if 'preprocess_args.master_radec' not in args:
+    if 'preprocess_args.parent_radec' not in args:
         if 'j021732m0512' in root:
             radec = 'gaia_sxds-dud-HSCdr2_corr_uds.radec'
         elif 'j033236m2748' in root:
-            radec = 'gaia-pm_simple-irac_corr_cdfs.radec'
+            radec = 'gaia-pm_mast-hlf_corr_cdfs.radec'
         else:
             radec = None
         
         if radec is not None:    
             os.system('aws s3 cp s3://grizli/AlignmentCatalogs/{0} .'.format(radec))
-            kwargs['preprocess_args']['master_radec'] = '../../'+radec
+            kwargs['preprocess_args']['parent_radec'] = '../../'+radec
     
     output_yml = '{0}.auto_script.yml'.format(root)
     auto_script.write_params_to_yml(kwargs, output_file=output_yml)

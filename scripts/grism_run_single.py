@@ -266,7 +266,7 @@ def auto_run(root='j023507-040202', args=[]):
         if 'j021732m0512' in root:
             radec = 'gaia_sxds-dud-HSCdr2_corr_uds.radec'
         elif 'j033236m2748' in root:
-            radec = 'gaia-pm_ecdfs-cardamone_corr_cdfs.radec'
+            radec = 'gaia-pm_simple-irac_corr_cdfs.radec'
         else:
             radec = None
         

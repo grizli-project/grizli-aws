@@ -1,0 +1,5 @@
+#!/bin/bash
+hasfiles=`ls /GrizliImaging/ | grep "\.log"`
+if [ -z $hasfiles ]; then 
+    halt
+fi

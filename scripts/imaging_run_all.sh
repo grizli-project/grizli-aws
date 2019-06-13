@@ -37,6 +37,7 @@ for root in $roots; do
         echo "Run ${root}"
         echo "Run ${root}" >> /tmp/imaging_run_all.log
         grism_run_single.sh ${root} $@
+        rm -rf /GrizliImaging/${root}*
     else
         echo "Skip ${root} (start=$start stop=$stop)"
         echo "Skip ${root} (start=$start stop=$stop)" >> /tmp/imaging_run_all.log

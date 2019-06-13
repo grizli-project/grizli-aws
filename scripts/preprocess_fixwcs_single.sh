@@ -15,6 +15,8 @@ fi
 
 root=$1
 
+bucket=grizli-preprocess
+
 echo "Running on root=${root}"
 
 # Initialize working directory
@@ -24,21 +26,21 @@ rm -rf /GrizliImaging/${root}*
 cd /GrizliImaging
 
 echo "Start:   `date`" > ${root}.log
-aws s3 cp ${root}.log s3://grizli-preprocess/FixWCS/Log/Start/
+aws s3 cp ${root}.log s3://${bucket}/FixWCS/Log/Start/
 
 # Copy from S3
-aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_footprint.fits ./
-aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_master.radec ./
-aws s3 cp s3://grizli-preprocess/Pipeline/Fields/${root}_parent.radec ./
+aws s3 cp s3://${bucket}/Pipeline/Fields/${root}_footprint.fits ./
+aws s3 cp s3://${bucket}/Pipeline/Fields/${root}_master.radec ./
+aws s3 cp s3://${bucket}/Pipeline/Fields/${root}_parent.radec ./
 
 # For COSMOS
-aws s3 cp s3://grizli-preprocess/hsc-udeep-i25_corr_cosmos.radec ./
+aws s3 cp s3://${bucket}/hsc-udeep-i25_corr_cosmos.radec ./
 # For UDS
-aws s3 cp s3://grizli-preprocess/hsc-udeep-sxds_corr_uds.radec ./
+aws s3 cp s3://${bucket}/hsc-udeep-sxds_corr_uds.radec ./
 
 # Sync entire directory
 mkdir ${root}
-aws s3 sync --exclude "Prep/FineBkup*" s3://grizli-preprocess/Pipeline/${root} ./${root}
+aws s3 sync --exclude "Prep/FineBkup*" s3://${bucket}/Pipeline/${root} ./${root}
 rm ${root}/Prep/*fail*
 rm -rf ${root}/Prep/*fine.* ${root}/Prep/FineBk*
 
@@ -54,7 +56,7 @@ rm ${root}/Prep/astrodrizzle.log
 rm ${root}/Prep/stwcs.log
 
 # Remove old failed files
-aws s3 rm --recursive --exclude "*" --include "*failed" s3://grizli-preprocess/Pipeline/${root}/
+aws s3 rm --recursive --exclude "*" --include "*failed" s3://${bucket}/Pipeline/${root}/
 
 #if [ -e ${root}/Prep/${root}_fine.png ]; then 
 failed=`ls ${root}/Prep/ |grep fail`
@@ -73,23 +75,23 @@ if [ -z "$failed" ] ; then
                               --include "Prep/*reg" \
                               --include "Prep/*radec" \
                               --acl public-read \
-                              ./${root} s3://grizli-preprocess/Pipeline/${root}
+                              ./${root} s3://${bucket}/Pipeline/${root}
 
     echo "${root}: Success" 
     echo "Finished:   `date`" > ${root}.log
-    aws s3 cp ${root}.log s3://grizli-preprocess/FixWCS/Log/Finished/
-    aws s3 rm s3://grizli-preprocess/FixWCS/Log/Failed/${root}.log
+    aws s3 cp ${root}.log s3://${bucket}/FixWCS/Log/Finished/
+    aws s3 rm s3://${bucket}/FixWCS/Log/Failed/${root}.log
     
     rm -rf /GrizliImaging/${root}*
     
 else
     echo "${root}: Fail..."
     echo "Failed:   `date`" > ${root}.log
-    aws s3 cp ${root}.log s3://grizli-preprocess/FixWCS/Log/Failed/
-    aws s3 rm s3://grizli-preprocess/FixWCS/Log/Finished/${root}.log
+    aws s3 cp ${root}.log s3://${bucket}/FixWCS/Log/Failed/
+    aws s3 rm s3://${bucket}/FixWCS/Log/Finished/${root}.log
     
     # Remove fine files
-    aws s3 rm --recursive --exclude "*" --include "*fine.*" --include "FineBkup*" s3://grizli-preprocess/Pipeline/${root}/Prep/
+    aws s3 rm --recursive --exclude "*" --include "*fine.*" --include "FineBkup*" s3://${bucket}/Pipeline/${root}/Prep/
     
 fi
 

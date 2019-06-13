@@ -1,6 +1,8 @@
 aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType]" | sort
 
-ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 |  grep m5d.2x | awk '{print $1}' `
+ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 | awk '{print $1}' `
+
+ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 |  grep c5d | awk '{print $1}' `
 
 
 ### Drizzler
@@ -14,8 +16,11 @@ ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=runn
 # aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_preprocess_single cos-j1001p0217-f140w-022"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
 
 ## CLEAN LOGS
-aws s3 sync s3://grizli/Pipeline/Finished/ s3://grizli/Pipeline/Start/ --acl public-read
-aws s3 sync s3://grizli/Pipeline/Log/Finished/ s3://grizli/Pipeline/Log/Start/ --acl public-read
+bucket=grizli
+
+#aws s3 sync s3://${bucket}/Pipeline/Finished/ s3://${bucket}/Pipeline/Start/ --acl public-read
+aws s3 rm --recursive s3://${bucket}/Pipeline/Log/Start/
+aws s3 sync s3://${bucket}/Pipeline/Log/Finished/ s3://${bucket}/Pipeline/Log/Start/ --acl public-read
 
 # Refresh all repos
 for id in $ids; do     
@@ -25,13 +30,22 @@ for id in $ids; do
 
 done
 
-# Don't init or kill
-init=""
+# INit, don't kill
+#init="\"refresh_repositories > /tmp/refresh.log; aws s3 sync s3://grizli-preprocess/Scripts/ /usr/local/bin/ >> /tmp/refresh.log; chmod +x /usr/local/bin/auto_run*\","
+init="\"refresh_repositories > /tmp/refresh.log; chmod +x /usr/local/bin/auto_run*\","
 halt=""
 
-# INit and kill
-init="\"refresh_repositories > /tmp/refresh.log; aws s3 sync s3://grizli-preprocess/Scripts/ /usr/local/bin/ >> /tmp/refresh.log; chmod +x /usr/local/bin/auto_run*\","
+# Don't init
+init=""
 halt=",\"halt\""
+
+# Halt if all done
+halt=",\"hasfiles=`ls /GrizliImaging/ | grep log`; if [ -z \$hasfiles ]; then halt; fi\""
+
+for id in $ids; do
+    # Halt if done
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[\"refresh_repositories; halt_if_grizli_done\"],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+done
 
 for id in $ids; do     
     echo $id
@@ -40,9 +54,12 @@ for id in $ids; do
     
     ########### Run pipeline on each sub-field
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_preprocess","halt"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
-
+    
+    ########### new preprocessing for CANDELS fields
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+        
     ############# Run grism preprep
-    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_grism\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_grism\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     
     # ############# Run fixwcs
     # aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_preprocess_fixwcs\",\"halt\"],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1

@@ -171,6 +171,7 @@ def auto_run(root='j023507-040202', flag_global_crs=False):
         cat = prep.make_SEP_catalog(root=visit['product'], threshold=thresh)
         prep.table_to_regions(cat, '{0}.cat.reg'.format(visit['product']))
         prep.table_to_radec(cat, '{0}.cat.radec'.format(visit['product']))
+    
     # Update visits file
     v = auto_script.get_visit_exposure_footprints(visit_file=visit_file,   
                              check_paths=['./', '../RAW'], simplify=1.e-6)

@@ -279,7 +279,11 @@ def auto_run(root='j023507-040202', args=[]):
     for k in kwargs:
         if kwargs[k] == 'NoneType':
             kwargs[k] = None
-            
+        elif isinstance(kwargs[k], dict):
+            for k_i in kwargs[k]:
+                if kwargs[k][k_i] == 'NoneType':
+                    kwargs[k][k_i] = None
+                    
     output_yml = '{0}.auto_script.yml'.format(root)
     auto_script.write_params_to_yml(kwargs, output_file=output_yml)
     

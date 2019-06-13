@@ -15,12 +15,15 @@ ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=runn
 
 # aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_preprocess_single cos-j1001p0217-f140w-022"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
 
-## CLEAN LOGS
-bucket=grizli
+###### Check
+for ext in Start Finished Failed; do aws s3 ls s3://grizli-v1/Pipeline/Log/${ext}/ > /tmp/${ext}.log; echo ""; echo $ext `wc -l /tmp/${ext}.log`; echo ""; cat /tmp/${ext}.log | sort -k 1 -k 2 | tail; done
 
-#aws s3 sync s3://${bucket}/Pipeline/Finished/ s3://${bucket}/Pipeline/Start/ --acl public-read
+## CLEAN LOGS
+bucket=grizli-v1
+
 aws s3 rm --recursive s3://${bucket}/Pipeline/Log/Start/
 aws s3 sync s3://${bucket}/Pipeline/Log/Finished/ s3://${bucket}/Pipeline/Log/Start/ --acl public-read
+aws s3 sync s3://${bucket}/Pipeline/Log/Failed/ s3://${bucket}/Pipeline/Log/Start/ --acl public-read
 
 # Refresh all repos
 for id in $ids; do     

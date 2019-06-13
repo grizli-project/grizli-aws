@@ -262,7 +262,7 @@ def auto_run(root='j023507-040202', args=[]):
     # kwargs['multiband_catalog_args']['detection_params']['filter_kernel'] = filter_kernel
     
     # Master radec
-    if 'preprocess_args.parent_radec' not in args:
+    if '--preprocess_args.parent_radec' not in [a.split('=')[0] for a in args]:
         if 'j021732m0512' in root:
             radec = 'gaia_sxds-dud-HSCdr2_corr_uds.radec'
         elif 'j033236m2748' in root:

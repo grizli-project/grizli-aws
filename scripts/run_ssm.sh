@@ -15,7 +15,7 @@ ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=runn
 
 # aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_preprocess_single cos-j1001p0217-f140w-022"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
 
-###### Check
+###### Check status
 for ext in Start Finished Failed; do aws s3 ls s3://grizli-v1/Pipeline/Log/${ext}/ > /tmp/${ext}.log; echo ""; echo $ext `wc -l /tmp/${ext}.log`; echo ""; cat /tmp/${ext}.log | sort -k 1 -k 2 | tail; done
 
 ## CLEAN LOGS

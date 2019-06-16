@@ -247,9 +247,17 @@ def go():
     ########
     # Remake catalogs and drizzled images
     from drizzlepac.astrodrizzle import AstroDrizzle
-    filters = ['f814w','f140w','f160w']
+    import numpy as np
+    import glob
+    import os
+    from grizli import prep
+    
+    all_visits, all_groups, all_info = np.load('{0}_visits.npy'.format(out_root))
+    
+    filters = ['f814w','f140w','f160w','f105w','f098m','f850lp']
+    #filters = ['f850lp']
     count, products = 0, []
-    for ii, direct in enumerate(all_visits):
+    for ii, direct in enumerate(all_visits[::-1]):
         filt = direct['product'].split('-')[-1]
         
         prod_files = glob.glob(direct['product']+'*sci.fits')
@@ -276,6 +284,10 @@ def go():
             driz_cr_snr = '8.0 5.0'
             driz_cr_scale = '2.5 0.7'
         
+        for aws, file in zip(direct['awspath'], direct['files']):
+            if not os.path.exists(file):
+                os.system('aws s3 cp s3://{0}/{1} ./'.format(aws, file))
+                
         cr_corr = False
         AstroDrizzle(direct['files'], output=direct['product'], clean=True,
                      context=False, preserve=False, skysub=True,
@@ -288,10 +300,19 @@ def go():
                      resetbits=4096*cr_corr, build=False, 
                      final_kernel='point', 
                      final_wht_type='IVM')        
-        
+                
         # Remake catalog
         cat = prep.make_SEP_catalog(root=direct['product'], threshold=5)
         os.system('rm {0}*_[wbs]?[gt].fits'.format(direct['product']))
+        
+        # Remove mosaic
+        os.system('rm {0}*_sci.fits'.format(direct['product']))
+
+        # Remove FLC
+        if isACS:
+            for f in direct['files']:
+                os.remove(f)
+        
         
     
     # Make mosaics

@@ -58,18 +58,21 @@ def make_candels_tiles():
     
     one_tile = {}
     one_tile[t] = tiles[t]
-    
+    drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
+        
     #all_visits, all_groups, all_info = np.load('goodss-j033236m2748_visits.npy')
     
-    drizzle_tiles(all_visits, tiles, filts=['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w','f814w'][:-1], prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
+    filts = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w','f814w'][:-1]
+    
+    drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
     
     # Combine
-    filt_i = 'f160w'
-    
-    files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-f814w*sci.fits.gz')
     
     init = True
-    filt_i ='f160w'
+    filt_i ='*'
+    
+    init = False
+    filt_i ='f814w'
     
     files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
     files.sort()

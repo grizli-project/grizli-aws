@@ -265,8 +265,13 @@ def auto_run(root='j023507-040202', args=[]):
     if '--preprocess_args.parent_radec' not in [a.split('=')[0] for a in args]:
         if 'j021732m0512' in root:
             radec = 'gaia_sxds-dud-HSCdr2_corr_uds.radec'
+            radec = 'uds_prelim_hst.radec'
+        elif 'j033236m2748' in root:
+            #radec = 'gaia-pm_mast-hlf_corr_cdfs.radec'
+            radec = 'cdfs_prelim_hst.radec'
         elif 'j141956p5255' in root:
             radec = 'gaia_ps1+hsc_corr_aegis.radec'        
+            radec = 'egs_prelim_hst.radec'
         else:
             radec = None
         

@@ -270,8 +270,10 @@ def auto_run(root='j023507-040202', args=[]):
             #radec = 'gaia-pm_mast-hlf_corr_cdfs.radec'
             radec = 'cdfs_prelim_hst.radec'
         elif 'j141956p5255' in root:
-            radec = 'gaia_ps1+hsc_corr_aegis.radec'        
+            #radec = 'gaia_ps1+hsc_corr_aegis.radec'        
             radec = 'egs_prelim_hst.radec'
+        elif 'j123656p6215' in root:
+            radec = 'goodsn_prelim_hst.radec'
         else:
             radec = None
         

@@ -165,14 +165,32 @@ def go():
 
     # Shift parameters
     if False:
-        os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*cat.fits" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" s3://grizli-v1/Pipeline/ .'.format(root))
-        
+        os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*cat.fits" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" --include "{0}*/Prep/*expflag*" s3://grizli-v1/Pipeline/ .'.format(root))
+    
+    # Shifts
+    os.system('echo "# root visit exp xsh ysh rot scl n xrms yrms" > shifts_results.log')
+    os.system('grep "_fl"  j*/Prep/*shifts.log | grep -v "\#" | sed "s/:/ /" | sed "s/.Prep./ /g" | sed "s/_shifts.log//" >> shifts_results.log')
+    sh = utils.read_catalog('shifts_results.log')
+    badsh = (sh['xrms'] > 1) | (sh['yrms'] > 1) #| (sh['n'] < 10)
+    
+    # Flag
+    os.system('echo "group,x,expm,flag" > expflag_results.csv')
+    os.system('grep "fits" j*/Prep/*expflag*txt | sed "s/:/,/g" | sed "s/.txt/ /" | sed "s/.Prep//" | sed "s/\//,/g" | sed "s/_raw/_flt/" >> expflag_results.csv')
+    expf = utils.read_catalog('expflag_results.csv')
+    bad_expf = expf['flag'] != 'NORMAL'
+    exp_visits = np.unique(expf['group'][bad_expf])
+    exp_visits = []
+    
+    # wcs
     os.system('echo "# dir visit x xs ys rot scl rms n" > shift_wcs.log')
     os.system('grep " 0 " j*/Prep/*wcs.log | sed "s/.Prep./ /" | sed "s/_wcs.log://" >> shift_wcs.log')
     shifts = utils.read_catalog('shift_wcs.log')
     skip = (shifts['n'] < 7)
     skip |= (shifts['xs'] == 0.) | (np.abs(shifts['rot']) > 0.2)
     skip_visits = ['{0}_{1}'.format('_'.join(d.split('_')[:2]), v) for d, v in zip(shifts['dir'][skip], shifts['visit'][skip])]
+        
+    skip_visits += list(exp_visits)
+    skip_visits = list(np.unique(skip_visits))
     
     skip_keys = ['uds-12-bhm']
     skip_keys += ['94s-245.0'] # bad shifts.txt

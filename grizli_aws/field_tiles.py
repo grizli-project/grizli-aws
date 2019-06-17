@@ -62,18 +62,17 @@ def make_candels_tiles():
         
     #all_visits, all_groups, all_info = np.load('goodss-j033236m2748_visits.npy')
     
-    filts = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w','f814w'][:-1]
+    filts = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]#,'f814w'][:-1]
     
     drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
     
     # Combine
     
-    init = True
-    filt_i ='*'
-    
-    init = False
     filt_i ='f814w'
     
+    init = True
+    filt_i ='*'
+        
     files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
     files.sort()
     
@@ -165,19 +164,30 @@ def grism_model():
     import os
     import glob
     
-    field_root = root = 'uds-grism-j021732m0512'
-        
+    from grizli.pipeline import auto_script
+    kwargs = auto_script.get_yml_parameters()
+    
+    if key == 'uds':
+        field_root = root = 'uds-grism-j021732m0512'
+    elif key == 'egs':
+        field_root = root = 'egs-grism-j141956p5255'
+    elif key == 'gds':
+        field_root = root = 'egs-grism-j033236m2748'
+    elif key == 'gdn':
+        field_root = root = 'gdn-grism-j123656p6215'
+             
     # IR-combined
     num = None
     for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
-        sci_file = 'uds-100mas-{0}_drz_sci.fits'.format(filt)
+        sci_file = '{0}-100mas-{1}_drz_sci.fits'.format(key, filt)
         if not os.path.exists(sci_file):
             continue
         
         print(sci_file)
          
-        os.system('ln -sf uds-100mas-{1}_drz_sci.fits {0}-{1}_drz_sci.fits'.format(root, filt))
-        os.system('ln -sf uds-100mas-{1}_drz_wht.fits {0}-{1}_drz_wht.fits'.format(root, filt))
+        #Symlink to individual bands
+        os.system('ln -sf {0}-100mas-{2}_drz_sci.fits {1}-{2}_drz_sci.fits'.format(key, root, filt))
+        os.system('ln -sf {0}-100mas-{2}_drz_wht.fits {1}-{2}_drz_wht.fits'.format(key, root, filt))
  
         im_i = pyfits.open(sci_file)
         wht_i = pyfits.open(sci_file.replace('_sci','_wht'))
@@ -204,22 +214,24 @@ def grism_model():
     
     # Fill filters with combination
     for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
-        sci_file = 'uds-100mas-{0}_drz_sci.fits'.format(filt)
+        sci_file = '{0}-100mas-{1}_drz_sci.fits'.format(key, filt)
         if not os.path.exists(sci_file):
             continue
-        
-        print(sci_file)
-         
+                 
         im_i = pyfits.open(sci_file, mode='update')
         wht_i = pyfits.open(sci_file.replace('_sci','_wht'))
         photflam = im_i[0].header['PHOTFLAM']
         mask = (wht_i[0].data <= 0) & (wht > 0)
+        print(sci_file, mask.sum())
+        
         im_i[0].data[mask] = sci[mask]*ref_photflam/photflam
         im_i.flush()
         
     del(sci); del(wht); del(mask); del(im_i); del(wht_i); del(den_i)
       
-    out_root = 'uds-j021732m0512'
+    #out_root = 'uds-j021732m0512'
+    out_root = root.replace('-grism','')
+    
     all_visits, all_groups, all_info = np.load('{0}_visits.npy'.format(out_root))
     
     groups = all_groups#[:28]
@@ -237,10 +249,7 @@ def grism_model():
     np.save(root+'_visits.npy', [visits, groups, all_info[all_info['keep']]])
     
     visits, groups, info = np.load(root+'_visits.npy')
-    
-    from grizli.pipeline import auto_script
-    kwargs = auto_script.get_yml_parameters()
-    
+        
     tab = auto_script.multiband_catalog(field_root=root,
                                         **kwargs['multiband_catalog_args'])
     
@@ -273,6 +282,14 @@ def grism_model():
         #
         # Make drizzle model images
         grp.drizzle_grism_models(root=root, kernel='point', scale=0.15)
+    
+    # Extractions
+    pline = auto_script.DITHERED_PLINE
+    auto_script.generate_fit_params(field_root=root, prior=None, MW_EBV=0.019, pline=pline, fit_only_beams=True, run_fit=True, poly_order=7, fsps=True, min_sens=0.001, sys_err=0.03, fcontam=0.2, zr=[0.05, 3.4], save_file='fit_args.npy', fit_trace_shift=False, include_photometry=True, use_phot_obj=False)
+    
+    ids = [27115]
+    auto_script.extract(field_root=root, maglim=[13, 24], prior=None, MW_EBV=0.019, ids=ids, pline=pline, fit_only_beams=True, run_fit=False, poly_order=7, oned_R=30, master_files=None, grp=grp, bad_pa_threshold=None, fit_trace_shift=False, size=32, diff=True, min_sens=0.01, fcontam=0.2, min_mask=0.01, sys_err=0.03, skip_complete=True, args_file='fit_args.npy', get_only_beams=False)
+    fitting.run_all_parallel(ids[0], verbose=True) 
     
     
 def define_tiles(ra=109.3935148, dec=37.74934031, size=(24, 24), tile_size=6, overlap=0.3, field='macs0717', pixscale=0.03, theta=0):

@@ -217,7 +217,7 @@ echo "gzip mosaics"
 
 gzip --force ${root}/Prep/${root}*_dr?_*fits
 gzip --force ${root}/Prep/${root}*_seg.fits
-gzip --force ${root}/Extractions/*grism*fits
+gzip --force ${root}/Extractions/*_grism*fits
 
 # echo "gzip exposures"
 # gzip --force ${root}/Prep/*_fl?.fits

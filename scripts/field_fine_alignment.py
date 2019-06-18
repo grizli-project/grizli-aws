@@ -6,6 +6,15 @@ from grizli import prep, utils
 from grizli.pipeline import auto_script
 import astropy.units as u
 
+shell = """
+
+# Misc shell things
+
+# clean out ACS
+aws s3 rm --recursive --exclude "*" --include "*wfc3uvis*" --include "*acswfc*" --exclude "*wfc3ir*" s3://grizli-v1/Pipeline/
+
+"""
+
 def go():
 
     os.chdir('/home/ec2-user/Mosaics')
@@ -166,6 +175,9 @@ def go():
     # Shift parameters
     if False:
         os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*cat.fits" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" --include "{0}*/Prep/*expflag*" s3://grizli-v1/Pipeline/ .'.format(root))
+        
+        # No catalogs 
+        os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" s3://grizli-v1/Pipeline/ .'.format(root))
     
     # Shifts
     os.system('echo "# root visit exp xsh ysh rot scl n xrms yrms" > shifts_results.log')
@@ -247,14 +259,14 @@ def go():
     all_info = astropy.table.vstack(all_info)
     
     if root == 'j123656p6215':    
-        out_root = 'goodsn-'+root
+        out_root = 'gdn-'+root
         
     elif root == 'j021732m0512':
         out_root = 'uds-'+root
     elif root == 'j141956p5255':
         out_root = 'egs-'+root
     elif root == 'j033236m2748':
-        out_root = 'goodss-'+root
+        out_root = 'gds-'+root
     else:
         out_root = 'xxx-'+root
 

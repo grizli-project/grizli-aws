@@ -4,6 +4,15 @@ Move exposures to a general directory like
 
 """
 
+def move_all():
+    import grizli_aws.utils
+    roots=glob.glob('*wfc3ir*')
+    for i, root in enumerate(roots):
+        print('\n\n\n# {0} {1}\n\n'.format(i, root))
+        
+        grizli_aws.utils.move_exposures(root=root, bucket='grizli-v1', base_path='Exposures', verbose=True)
+        os.system('mv {0}_visits.npy {0}/Prep/'.format(root))
+        
 def move_exposures(root='j021732m0512_1716_bfu_marshall_wfc3ir_f125w-f160w-g141', bucket='grizli-v1', base_path='Exposures', verbose=True):
     """
     Move FLT/FLC files from visit directories to a common exposure bucket

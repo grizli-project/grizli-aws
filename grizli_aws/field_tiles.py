@@ -66,79 +66,88 @@ def make_candels_tiles():
     
     drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
     
-    # Combine
+    ##########
+    # Combine final mosaics
     
     filt_i ='f814w'
     
+    # Compute tiles needed for full mosaic extent
     init = True
-    filt_i ='*'
-        
-    files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
+    files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*-*sci.fits.gz')
     files.sort()
-    
+
     tile_pos = np.array([int(file.split('-')[1].replace('.','')) for file in files])
     xp = tile_pos // 100
     yp = tile_pos % 100
     
-    if init:
-        left, bot = xp.min(), yp.min()
-    
-        nx = (xp.max()-xp.min())+1
-        ny = (yp.max()-yp.min())+1
-        init = False
-    
-    # Force full mosaic
-    # left, bot = 1, 1
-    # nx, ny = 7,5
-    
+    left, bot = xp.min(), yp.min()
+
+    nx = (xp.max()-xp.min())+1
+    ny = (yp.max()-yp.min())+1
+
+    # WCS defined in lower left corner
     ll = '{0:02d}.{1:02d}'.format(left, bot)
-    
     tiles = np.load('{0}_50mas_tile_wcs.npy'.format(key))[0]
     wcs = tiles[ll]
+
+    ## Loop over filters
+    filts = ['f098m','f110w','f140w','f105w','f160w','f125w']
+    for filt_i in filts:
     
-    ref = pyfits.open(files[0])[0]
-    sh = ref.data.shape
-    the_filter = utils.get_hst_filter(ref.header)
+        files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
     
-    is_fine = '50mas' in files[0]
-    if is_fine:
-        wh = wcs._header
-    else:  
-        wh = utils.to_header(tiles[ll])
-        for k in ['NAXIS1','NAXIS2']:
-            wh[k] //= 2
+        tile_pos = np.array([int(file.split('-')[1].replace('.','')) for file in files])
+        xp = tile_pos // 100
+        yp = tile_pos % 100
         
-        wh['CRPIX1'] = (wh['CRPIX1']+0.5)/2.
-        wh['CRPIX2'] = (wh['CRPIX2']+0.5)/2.
-        
-        for k in ['CD1_1','CD1_2', 'CD2_1','CD2_2']:
-            if k in wh:
-                wh[k] *= 2
+        ref = pyfits.open(files[0])[0]
+        sh = ref.data.shape
+        the_filter = utils.get_hst_filter(ref.header)
     
-    for k in ['INSTRUME', 'DETECTOR', 'PHOTFNU', 'PHOTFLAM', 'PHOTBW','PHOTZPT', 'PHOTMODE', 'PHOTPLAM', 'FILTER', 'FILTER1', 'FILTER2']:
-        if k in ref.header:
-            wh[k] = ref.header[k]
-    
-    del(ref)
-    
-    olap = int(0.3*60/0.1*(1+is_fine))
-    
-    for ext in ['sci','wht']:
-        data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.float32)
-        for i, file in enumerate(files):
-            print(file.replace('_sci', '_'+ext))
-            sci_i = pyfits.open(file.replace('_sci', '_'+ext))
-            x0 = (xp[i]-left)*(sh[1]-olap)
-            y0 = (yp[i]-bot)*(sh[0]-olap)
-            slx = slice(x0,x0+sh[1])
-            sly = slice(y0,y0+sh[0])
-            data[sly, slx] = sci_i[0].data
+        is_fine = '50mas' in files[0]
+        if is_fine:
+            wh = wcs._header
+        else:  
+            wh = utils.to_header(tiles[ll])
+            for k in ['NAXIS1','NAXIS2']:
+                wh[k] //= 2
         
-        mos = pyfits.PrimaryHDU(data=data, header=wh)
-        mos.writeto('{0}-{1:03d}mas-{2}_drz_{3}.fits'.format(key, 100//(1+is_fine), the_filter.lower(), ext), overwrite=True)
+            wh['CRPIX1'] = (wh['CRPIX1']+0.5)/2.
+            wh['CRPIX2'] = (wh['CRPIX2']+0.5)/2.
         
-        del(data)
+            for k in ['CD1_1','CD1_2', 'CD2_1','CD2_2']:
+                if k in wh:
+                    wh[k] *= 2
+    
+        for k in ['INSTRUME', 'DETECTOR', 'PHOTFNU', 'PHOTFLAM', 'PHOTBW','PHOTZPT', 'PHOTMODE', 'PHOTPLAM', 'FILTER', 'FILTER1', 'FILTER2']:
+            if k in ref.header:
+                wh[k] = ref.header[k]
+    
+        # Compute size of overlap in pixels (tiles generated with 0.3' overlap)
+        coarse_pix = 0.1
+        overlap_arcmin = 0.3    
+        olap = int(overlap_arcmin*60/coarse_pix*(1+is_fine))
+    
+        for ext in ['sci','wht']:
+            data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.float32)
+            for i, file in enumerate(files):
+                print(file.replace('_sci', '_'+ext))
+                sci_i = pyfits.open(file.replace('_sci', '_'+ext))
+                x0 = (xp[i]-left)*(sh[1]-olap)
+                y0 = (yp[i]-bot)*(sh[0]-olap)
+                slx = slice(x0,x0+sh[1])
+                sly = slice(y0,y0+sh[0])
+                data[sly, slx] = sci_i[0].data
         
+            mos = pyfits.PrimaryHDU(data=data, header=wh)
+            mos.writeto('{0}-{1:03d}mas-{2}_drz_{3}.fits'.format(key, 100//(1+is_fine), the_filter.lower(), ext), overwrite=True)
+        
+            del(data)
+    
+    # Gzip and sync
+    os.system('gzip {0}-???mas*fits'.format(key))
+    os.system('aws s3 sync --exclude "*" --include "{0}*" ./ s3://grizli-v1/Mosaics/ '.format(key))
+    
     # Make catalogs
     import os
     from grizli import prep
@@ -172,22 +181,22 @@ def grism_model():
     elif key == 'egs':
         field_root = root = 'egs-grism-j141956p5255'
     elif key == 'gds':
-        field_root = root = 'egs-grism-j033236m2748'
+        field_root = root = 'gds-grism-j033236m2748'
     elif key == 'gdn':
         field_root = root = 'gdn-grism-j123656p6215'
              
     # IR-combined
     num = None
     for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
-        sci_file = '{0}-100mas-{1}_drz_sci.fits'.format(key, filt)
+        sci_file = '{0}-100mas-{1}_drz_sci.fits.gz'.format(key, filt)
         if not os.path.exists(sci_file):
             continue
         
         print(sci_file)
          
         #Symlink to individual bands
-        os.system('ln -sf {0}-100mas-{2}_drz_sci.fits {1}-{2}_drz_sci.fits'.format(key, root, filt))
-        os.system('ln -sf {0}-100mas-{2}_drz_wht.fits {1}-{2}_drz_wht.fits'.format(key, root, filt))
+        os.system('cp -f {0}-100mas-{2}_drz_sci.fits.gz {1}-{2}_drz_sci.fits.gz'.format(key, root, filt))
+        os.system('cp -f {0}-100mas-{2}_drz_wht.fits.gz {1}-{2}_drz_wht.fits.gz'.format(key, root, filt))
  
         im_i = pyfits.open(sci_file)
         wht_i = pyfits.open(sci_file.replace('_sci','_wht'))
@@ -214,7 +223,7 @@ def grism_model():
     
     # Fill filters with combination
     for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
-        sci_file = '{0}-100mas-{1}_drz_sci.fits'.format(key, filt)
+        sci_file = '{0}-{1}_drz_sci.fits.gz'.format(root, filt)
         if not os.path.exists(sci_file):
             continue
                  
@@ -228,7 +237,13 @@ def grism_model():
         im_i.flush()
         
     del(sci); del(wht); del(mask); del(im_i); del(wht_i); del(den_i)
-      
+    
+    # Gzip and sync
+    os.system('gzip {0}*fits'.format(root))
+    os.system('aws s3 sync --exclude "*" --include "{0}*" ./ s3://grizli-v1/Mosaics/ '.format(root))
+     
+    ########## Grism prep
+    
     #out_root = 'uds-j021732m0512'
     out_root = root.replace('-grism','')
     

@@ -20,7 +20,7 @@ if [ -n "${xxx}" ]; then
     # Quasar templates
     ids=303
     BUCKET=grizli
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=False --sleep=True --ids=${ids} --quasar_fit=True --check_wcs=True --output_path=self --use_psf=False --verbose=True
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=False --sleep=True --ids=${ids} --quasar_fit=True --check_wcs=True --output_path=self --use_psf=False --verbose=True --zr=0.1,4 --skip_started=False
     
     # Individual ID
     root=j022204m0412
@@ -99,12 +99,17 @@ fi
 #chmod ugoa+rwx /GrizliImaging
 cd /GrizliImaging
 
+fp_status=`aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./`
+if [ -z "${fp_status}" ]; then 
+    echo "Footprint s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits not found"
+    exit
+fi
+
 echo "Start:   `date`" > ${root}.log
 aws s3 cp ${root}.log s3://${BUCKET}/Pipeline/Log/Start/
 aws s3 rm s3://${BUCKET}/Pipeline/Log/Failed/${root}.log
 
 # Copy from S3
-aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_master.radec ./
 aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_parent.radec ./
         
@@ -270,7 +275,9 @@ if [ $nbeams -gt 0 ]; then
     # Generate catalog
     cd ${root}/Extractions/
     
-    aws s3 sync --exclude "*" --include "${root}*full.fits" --include "${root}*stack.png" --include "*cat.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
+    aws s3 sync --exclude "*" --include "${root}*full.fits" --include "${root}*stack.png" --include "*cat.fits" --include "*phot.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
+
+    aws s3 sync --exclude "*" --include "${root}*full.fits" --include "*cat.fits" --include "*phot.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
     
     #BUCKET=grizli
     grizli_extract_and_fit.py ${root} summary

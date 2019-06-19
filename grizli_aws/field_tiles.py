@@ -1,8 +1,9 @@
-
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
 import glob
+
 from grizli import prep, utils
 
 def test_egs():
@@ -104,8 +105,18 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
     drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
 
 def combine_tile_filters(key='egs'):
-    pass
-    
+    """
+    Make combined images weighted by photflam
+    """
+    for ix in range(20):
+        for iy in range(20):
+            tile_files = glob.glob('{0}-{1:02d}.{2:02d}-*sci.fits*'.format(key, ix, iy))
+            if len(tile_files) == 0:
+                continue
+            
+            print(tile_files[0])
+            tile_files.sort()
+            
 def make_all_tile_calogs(key='egs', filts=OPTICAL_FILTERS+IR_FILTERS):
 
     # Make catalogs
@@ -129,7 +140,14 @@ def make_all_tile_calogs(key='egs', filts=OPTICAL_FILTERS+IR_FILTERS):
             #os.system('rm {0}_seg.fits'.format(froot))
     
 def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=False, use_ref='all'):
-    
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import astropy.io.fits as pyfits
+    import glob
+
+    from grizli import prep, utils
+        
     ##########
     # Combine final mosaics
     
@@ -206,7 +224,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fa
         overlap_arcmin = 0.3    
         olap = int(overlap_arcmin*60/coarse_pix*(1+is_fine))
     
-        for ext in ['sci','wht']:
+        for ext in ['sci','wht','seg']:
             if ext == 'seg':
                 data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.float32)
                 out_ext = 'seg'
@@ -221,13 +239,15 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fa
                 slx = slice(x0,x0+sh[1])
                 sly = slice(y0,y0+sh[0])
 
+                file_ext = file.replace('drz_sci', out_ext)    
+                file_ext = file_ext.replace('drc_sci', out_ext)    
+
                 if (slx.stop > data_sh[1]) | (sly.stop > data_sh[0]):
-                    print('skip', file.replace('_sci', '_'+ext))
+                    print('skip', file_ext)
                     continue
                 else:
-                    print(file.replace('_sci', '_'+ext))
+                    print(file_ext)
                 
-                file_ext = file.replace('_sci', '_'+ext)    
                 if not os.path.exists(file_ext):
                     continue
                     

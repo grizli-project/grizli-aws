@@ -17,11 +17,33 @@ def test_egs():
     key = 'egs-rot'
     tiles = define_tiles(**fields[key])
     os.system('xpaset -p ds9 regions delete all; ds9_reg egs_50mas_tile_wcs_magenta.reg ; ds9_reg egs-rot_50mas_tile_wcs.reg')
+
+def tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6):
+    """
+    pixscale = pixel scale of optical images.  IR will be double
     
+    overlap = overlap of tiles in arcmin
+    
+    tile_size = tile size in arcmin
+    
+    """
+    fields = {}
+    fields['gdn'] = {'field':'gdn', 'ra':189.236, 'dec':62.257, 'size':(24,24), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
+    fields['uds'] = {'field':'uds', 'ra':34.361, 'dec':-5.163, 'size':(36,24), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
+    fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234, 'size':(54, 60), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
+    fields['gds'] = {'field':'gds', 'ra':53.1180-0.5/60, 'dec':-27.8216-0.5/60, 'size':(32, 32), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
+    
+    # Rotated EGS along strip
+    size=(80,20)
+    theta = 49.699
+    dy = -1./60
+    fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234+dy, 'size':size, 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale, 'theta':theta}
+    
+       
 IR_FILTERS = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]
 OPTICAL_FILTERS = ['f606w', 'f775w', 'f814w', 'f850lp']
     
-def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=False):
+def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/'):
     
     import numpy as np
     import matplotlib.pyplot as plt
@@ -52,18 +74,8 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fals
         dx = np.diff(xlim)[0]*cosd*60
         dy = np.diff(ylim)[0]*60
         print('\'ra\':{0:.4f}, \'dec\':{1:.4f}, \'size\':({2:.1f}, {3:.1f})'.format(ra, dec, dx, dy))
-        
-    fields = {}
-    fields['gdn'] = {'field':'gdn', 'ra':189.236, 'dec':62.257, 'size':(24,24), 'tile_size':6, 'overlap':0.3, 'pixscale':0.05}
-    fields['uds'] = {'field':'uds', 'ra':34.361, 'dec':-5.163, 'size':(36,24), 'tile_size':6, 'overlap':0.3, 'pixscale':0.05}
-    fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234, 'size':(54, 60), 'tile_size':6, 'overlap':0.3, 'pixscale':0.05}
-    fields['gds'] = {'field':'gds', 'ra':53.1180-0.5/60, 'dec':-27.8216-0.5/60, 'size':(32, 32), 'tile_size':6, 'overlap':0.3, 'pixscale':0.05}
     
-    # Rotated EGS along strip
-    size=(80,20)
-    theta = 49.699
-    dy = -1./60
-    fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234+dy, 'size':size, 'tile_size':6, 'overlap':0.3, 'pixscale':0.05, 'theta':theta}
+    fields = tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6)
     
     from grizli_aws.field_tiles import define_tiles, drizzle_tiles
      
@@ -74,7 +86,7 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fals
         t = '01.01'
         one_tile = {}
         one_tile[t] = tiles[t]
-        drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
+        drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
         
     #all_visits, all_groups, all_info = np.load('goodss-j033236m2748_visits.npy')
     
@@ -89,7 +101,34 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fals
     
     all_visits, all_groups, info = np.load(visit_file[0])
     
-    drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
+    drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
+
+def combine_tile_filters(key='egs'):
+    pass
+    
+def make_all_tile_calogs(key='egs', filts=OPTICAL_FILTERS+IR_FILTERS):
+
+    # Make catalogs
+    import os
+    from grizli import prep
+    import glob
+    for filt_i in filts:
+        files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
+        files.sort()
+        for i, file in enumerate(files):
+            
+            print('\n\n#######\n{0}\n#######\n'.format(froot))
+            
+            froot = file.split('_dr')[0]
+            if os.path.exists('{0}.cat.fits'.format(froot)):
+                continue
+            
+            prep.make_SEP_catalog(froot, threshold=3,
+                                  rescale_weight=False) 
+            os.system('rm {0}_bkg.fits'.format(froot))
+            #os.system('rm {0}_seg.fits'.format(froot))
+    
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=False, use_ref='all'):
     
     ##########
     # Combine final mosaics
@@ -98,7 +137,7 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fals
     
     # Compute tiles needed for full mosaic extent
     init = True
-    use_ref = 'all'
+    #use_ref = 'all'
     
     if use_ref == 'wfc3ir':
         # wfc3/ir
@@ -119,7 +158,7 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fals
 
     nx = (xp.max()-xp.min())+1
     ny = (yp.max()-yp.min())+1
-    print('Define mosaic for {0}: {1} x {2}'.format(key, nx, ny))
+    print('Define mosaic for {0} / {1}: {2} x {3}'.format(key, use_ref, nx, ny))
     
     # WCS defined in lower left corner
     ll = '{0:02d}.{1:02d}'.format(left, bot)
@@ -168,7 +207,13 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fals
         olap = int(overlap_arcmin*60/coarse_pix*(1+is_fine))
     
         for ext in ['sci','wht']:
-            data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.float32)
+            if ext == 'seg':
+                data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.float32)
+                out_ext = 'seg'
+            else:
+                data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.float32)
+                out_ext = 'drz_'+ext
+                
             data_sh = data.shape
             for i, file in enumerate(files):
                 x0 = (xp[i]-left)*(sh[1]-olap)
@@ -181,12 +226,16 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=Fals
                     continue
                 else:
                     print(file.replace('_sci', '_'+ext))
+                
+                file_ext = file.replace('_sci', '_'+ext)    
+                if not os.path.exists(file_ext):
+                    continue
                     
-                sci_i = pyfits.open(file.replace('_sci', '_'+ext))
+                sci_i = pyfits.open(file_ext)
                 data[sly, slx] = sci_i[0].data
         
             mos = pyfits.PrimaryHDU(data=data, header=wh)
-            mos.writeto('{0}-{1:03d}mas-{2}_drz_{3}.fits'.format(key, 100//(1+is_fine), the_filter.lower(), ext), overwrite=True)
+            mos.writeto('{0}-{1:03d}mas-{2}_{3}.fits'.format(key, 100//(1+is_fine), the_filter.lower(), out_ext), overwrite=True)
         
             del(data)
     
@@ -427,7 +476,7 @@ def grism_model():
     fitting.run_all_parallel(ids[0], verbose=True) 
     
     
-def define_tiles(ra=109.3935148, dec=37.74934031, size=(24, 24), tile_size=6, overlap=0.3, field='macs0717', pixscale=0.03, theta=0):
+def define_tiles(ra=109.3935148, dec=37.74934031, size=(24, 24), tile_size=6, overlap=0.3, field='macs0717', pixscale=0.05, theta=0):
     """
     Make tiles
     """

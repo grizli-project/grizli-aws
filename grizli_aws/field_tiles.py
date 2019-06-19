@@ -40,6 +40,8 @@ def tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6):
     dy = -1./60
     fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234+dy, 'size':size, 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale, 'theta':theta}
     
+    return fields
+    
        
 IR_FILTERS = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]
 OPTICAL_FILTERS = ['f606w', 'f775w', 'f814w', 'f850lp']
@@ -117,6 +119,56 @@ def combine_tile_filters(key='egs'):
             print(tile_files[0])
             tile_files.sort()
             
+            ####
+            ir_num = None
+            opt_num = None
+            
+            if False:
+                im = pyfits.open('egs-05.02-050mas-f814w_drc_sci.fits.gz')
+                im = pyfits.open('egs-05.02-100mas-f140w_drz_sci.fits.gz')
+                
+                wh = {}
+                for k in ['INSTRUME', 'DETECTOR', 'PHOTFNU', 'PHOTFLAM', 'PHOTBW','PHOTZPT', 'PHOTMODE', 'PHOTPLAM', 'FILTER', 'FILTER1', 'FILTER2']:
+                    if k in im[0].header:
+                        wh[k] = im[0].header[k]
+            
+            ref_h = {}
+            ref_h['opt'] = {'INSTRUME': 'ACS', 'DETECTOR': 'WFC', 'PHOTFLAM': 7.0178627203125e-20, 'PHOTBW': 653.24393453125, 'PHOTZPT': -21.1, 'PHOTMODE': 'ACS WFC1 F814W MJD#56438.5725', 'PHOTPLAM': 8045.415190625002, 'FILTER1': 'CLEAR1L', 'FILTER2': 'F814W'}
+            ref_h['ir'] = {'INSTRUME': 'WFC3', 'DETECTOR': 'IR', 'PHOTFNU': 9.5291135e-08, 'PHOTFLAM': 1.4737148e-20, 'PHOTBW': 1132.39, 'PHOTZPT': -21.1, 'PHOTMODE': 'WFC3 IR F140W', 'PHOTPLAM': 13922.907, 'FILTER': 'F140W'}
+                
+            for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
+                sci_file = '{0}-100mas-{1}_drz_sci.fits.gz'.format(key, filt)
+                if not os.path.exists(sci_file):
+                    continue
+
+                print(sci_file)
+
+                #Symlink to individual bands
+                os.system('cp -f {0}-100mas-{2}_drz_sci.fits.gz {1}-{2}_drz_sci.fits.gz'.format(key, root, filt))
+                os.system('cp -f {0}-100mas-{2}_drz_wht.fits.gz {1}-{2}_drz_wht.fits.gz'.format(key, root, filt))
+
+                im_i = pyfits.open(sci_file)
+                wht_i = pyfits.open(sci_file.replace('_sci','_wht'))
+                photflam = im_i[0].header['PHOTFLAM']
+                if num is None:
+                    ref_photflam = photflam*1
+                    ref_h = im_i[0].header
+                    num = im_i[0].data*0
+                    den = num*0
+
+                scl = photflam/ref_photflam
+                den_i = wht_i[0].data/scl**2
+                num += im_i[0].data*scl*den_i
+                den += den_i
+
+            sci = num/den
+            wht = den
+            mask = (~np.isfinite(sci)) | (den == 0)
+            sci[mask] = 0
+            wht[mask] = 0
+
+            pyfits.PrimaryHDU(data=sci, header=ref_h).writeto('{0}-{1}_drz_sci.fits'.format(root, 'ir'), overwrite=True, output_verify='fix')
+            pyfits.PrimaryHDU(data=wht, header=ref_h).writeto('{0}-{1}_drz_wht.fits'.format(root, 'ir'), overwrite=True, output_verify='fix')
 def make_all_tile_calogs(key='egs', filts=OPTICAL_FILTERS+IR_FILTERS):
 
     # Make catalogs

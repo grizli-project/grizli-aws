@@ -185,6 +185,7 @@ def go():
     os.system('grep "_fl"  j*/Prep/*shifts.log | grep -v "\#" | sed "s/:/ /" | sed "s/.Prep./ /g" | sed "s/_shifts.log//" >> shifts_results.log')
     sh = utils.read_catalog('shifts_results.log')
     badsh = (sh['xrms'] > 1) | (sh['yrms'] > 1) #| (sh['n'] < 10)
+    shift_skip_visits = list(np.unique(sh['visit'][badsh]))
     
     # Flag
     os.system('echo "group,x,expm,flag" > expflag_results.csv')
@@ -203,6 +204,7 @@ def go():
     skip_visits = ['{0}_{1}'.format('_'.join(d.split('_')[:2]), v) for d, v in zip(shifts['dir'][skip], shifts['visit'][skip])]
         
     skip_visits += list(exp_visits)
+    skip_visits += shift_skip_visits
     skip_visits = list(np.unique(skip_visits))
     
     skip_keys = ['uds-12-bhm']

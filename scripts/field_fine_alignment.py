@@ -20,7 +20,7 @@ def go():
     os.chdir('/home/ec2-user/Mosaics')
     
     root = 'j123656p6215'
-    
+
     root = 'j021732m0512'
     
     root = 'j141956p5255'
@@ -167,17 +167,18 @@ def go():
     ## Fields with catalogs
     visit_files = glob.glob('j*/Prep/*f814w*visits.npy')
     
-    ## UDS Mosaic now that they're aligned
+    ## Mosaic now that they're aligned
     
-    visit_files = glob.glob('j*/Prep/*visits.npy')
-    #visit_files = glob.glob('*shizels*/Prep/*visits.npy')
-
     # Shift parameters
     if False:
         os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*cat.fits" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" --include "{0}*/Prep/*expflag*" s3://grizli-v1/Pipeline/ .'.format(root))
         
         # No catalogs 
         os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" s3://grizli-v1/Pipeline/ .'.format(root))
+        
+        # ACS
+        os.system('aws s3 sync --exclude "*" --include "{0}*acswfc*/Prep/*expflag*" --include "{0}*acswfc*/Prep/*fail*" --include "{0}*acswfc*/Prep/*visits.npy" --include "{0}*acswfc*/Prep/*[._]wcs*" --include "{0}*acswfc*/Prep/*shifts.*" s3://grizli-v1/Pipeline/ .'.format(root))
+    
     
     # Shifts
     os.system('echo "# root visit exp xsh ysh rot scl n xrms yrms" > shifts_results.log')
@@ -207,6 +208,9 @@ def go():
     skip_keys = ['uds-12-bhm']
     skip_keys += ['94s-245.0'] # bad shifts.txt
     skip_keys += ['sn2002zx-'] # bad scale
+    
+    visit_files = glob.glob('j*/Prep/*visits.npy')
+    #visit_files = glob.glob('*shizels*/Prep/*visits.npy')
     
     all_visits = []
     all_groups = []

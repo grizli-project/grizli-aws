@@ -2,8 +2,9 @@ aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" 
 
 ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 | awk '{print $1}' `
 
+### c5 instances
 ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 |  grep c5 | awk '{print $1}' `
-
+echo `echo $ids | wc -w` "c5 instances"
 
 ### Drizzler
 id=i-0a8bae4cfe82dbce5
@@ -36,14 +37,15 @@ done
 # INit, don't kill
 #init="\"refresh_repositories > /tmp/refresh.log; aws s3 sync s3://grizli-preprocess/Scripts/ /usr/local/bin/ >> /tmp/refresh.log; chmod +x /usr/local/bin/auto_run*\","
 init="\"refresh_repositories > /tmp/refresh.log; chmod +x /usr/local/bin/auto_run*\","
-halt=""
+#halt=""
+halt=",\"halt_if_grizli_done\""
 
 # Don't init
 init=""
 halt=",\"halt\""
 
 # Halt if all done
-halt=",\"hasfiles=`ls /GrizliImaging/ | grep log`; if [ -z \$hasfiles ]; then halt; fi\""
+#halt=",\"hasfiles=`ls /GrizliImaging/ | grep log`; if [ -z \$hasfiles ]; then halt; fi\""
 
 for id in $ids; do
     # Halt if done
@@ -59,7 +61,7 @@ for id in $ids; do
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_preprocess","halt"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
     
     ########### new preprocessing for CANDELS fields
-    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=True --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
         
     ############# Run grism preprep
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_grism\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1

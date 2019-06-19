@@ -18,28 +18,41 @@ def test_egs():
     tiles = define_tiles(**fields[key])
     os.system('xpaset -p ds9 regions delete all; ds9_reg egs_50mas_tile_wcs_magenta.reg ; ds9_reg egs-rot_50mas_tile_wcs.reg')
     
-
-def make_candels_tiles():
+IR_FILTERS = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]
+OPTICAL_FILTERS = ['f606w', 'f775w', 'f814w', 'f850lp']
     
-    # Dimensions
-    xlim = [1e30, -1e30]
-    ylim = [1e30, -1e30]
-    for visit in all_visits:
-        xp, yp = visit['footprint'].buffer(1./60).boundary.xy
-        xlim[0] = np.minimum(xlim[0], np.min(xp))
-        xlim[1] = np.maximum(xlim[1], np.max(xp))
+def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, make_tile_catalogs=False):
+    
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import astropy.io.fits as pyfits
+    import glob
+    from grizli import prep, utils
+    
+    try:
+        test = key
+    except:
+        key = 'gdn'
         
-        ylim[0] = np.minimum(ylim[0], np.min(yp))
-        ylim[1] = np.maximum(ylim[1], np.max(yp))
+    # Dimensions
+    if 0:
+        # Compute size from visit footprints
+        xlim = [1e30, -1e30]
+        ylim = [1e30, -1e30]
+        for visit in all_visits:
+            xp, yp = visit['footprint'].buffer(1./60).boundary.xy
+            xlim[0] = np.minimum(xlim[0], np.min(xp))
+            xlim[1] = np.maximum(xlim[1], np.max(xp))
+        
+            ylim[0] = np.minimum(ylim[0], np.min(yp))
+            ylim[1] = np.maximum(ylim[1], np.max(yp))
     
-    ra, dec = np.mean(xlim), np.mean(ylim)
-    cosd = np.cos(dec/180*np.pi)
-    dx = np.diff(xlim)[0]*cosd*60
-    dy = np.diff(ylim)[0]*60
-    print('\'ra\':{0:.4f}, \'dec\':{1:.4f}, \'size\':({2:.1f}, {3:.1f})'.format(ra, dec, dx, dy))
-    
-    key = 'gdn'
-    
+        ra, dec = np.mean(xlim), np.mean(ylim)
+        cosd = np.cos(dec/180*np.pi)
+        dx = np.diff(xlim)[0]*cosd*60
+        dy = np.diff(ylim)[0]*60
+        print('\'ra\':{0:.4f}, \'dec\':{1:.4f}, \'size\':({2:.1f}, {3:.1f})'.format(ra, dec, dx, dy))
+        
     fields = {}
     fields['gdn'] = {'field':'gdn', 'ra':189.236, 'dec':62.257, 'size':(24,24), 'tile_size':6, 'overlap':0.3, 'pixscale':0.05}
     fields['uds'] = {'field':'uds', 'ra':34.361, 'dec':-5.163, 'size':(36,24), 'tile_size':6, 'overlap':0.3, 'pixscale':0.05}
@@ -52,17 +65,29 @@ def make_candels_tiles():
     dy = -1./60
     fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234+dy, 'size':size, 'tile_size':6, 'overlap':0.3, 'pixscale':0.05, 'theta':theta}
     
+    from grizli_aws.field_tiles import define_tiles, drizzle_tiles
+     
     tiles = define_tiles(**fields[key])
     
-    t = '01.01'
-    
-    one_tile = {}
-    one_tile[t] = tiles[t]
-    drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
+    if False:
+        # test single tile
+        t = '01.01'
+        one_tile = {}
+        one_tile[t] = tiles[t]
+        drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
         
     #all_visits, all_groups, all_info = np.load('goodss-j033236m2748_visits.npy')
     
-    filts = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]#,'f814w'][:-1]
+    #filts = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]
+    
+    #filts = ['f606w', 'f775w', 'f814w', 'f850lp']
+    
+    visit_file = glob.glob('{0}-j*visits.npy'.format(key))
+    if len(visit_file) == 0:
+        os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}*npy"'.format(key))
+        visit_file = glob.glob('{0}-j*visits.npy'.format(key))
+    
+    all_visits, all_groups, info = np.load(visit_file[0])
     
     drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/')
     
@@ -73,7 +98,17 @@ def make_candels_tiles():
     
     # Compute tiles needed for full mosaic extent
     init = True
-    files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*-*sci.fits.gz')
+    use_ref = 'all'
+    
+    if use_ref == 'wfc3ir':
+        # wfc3/ir
+        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*100mas*-*sci.fits.gz')
+    elif use_ref == 'acswfc':
+        # acs
+        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*050mas*-*sci.fits.gz')
+    else:
+        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*-*sci.fits.gz')
+
     files.sort()
 
     tile_pos = np.array([int(file.split('-')[1].replace('.','')) for file in files])
@@ -84,18 +119,22 @@ def make_candels_tiles():
 
     nx = (xp.max()-xp.min())+1
     ny = (yp.max()-yp.min())+1
-
+    print('Define mosaic for {0}: {1} x {2}'.format(key, nx, ny))
+    
     # WCS defined in lower left corner
     ll = '{0:02d}.{1:02d}'.format(left, bot)
     tiles = np.load('{0}_50mas_tile_wcs.npy'.format(key))[0]
     wcs = tiles[ll]
 
     ## Loop over filters
-    filts = ['f098m','f110w','f140w','f105w','f160w','f125w']
+    #filts = ['f098m','f110w','f140w','f105w','f160w','f125w']
     for filt_i in filts:
     
         files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
-    
+        files.sort()
+        if len(files) == 0:
+            continue
+            
         tile_pos = np.array([int(file.split('-')[1].replace('.','')) for file in files])
         xp = tile_pos // 100
         yp = tile_pos % 100
@@ -130,13 +169,20 @@ def make_candels_tiles():
     
         for ext in ['sci','wht']:
             data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.float32)
+            data_sh = data.shape
             for i, file in enumerate(files):
-                print(file.replace('_sci', '_'+ext))
-                sci_i = pyfits.open(file.replace('_sci', '_'+ext))
                 x0 = (xp[i]-left)*(sh[1]-olap)
                 y0 = (yp[i]-bot)*(sh[0]-olap)
                 slx = slice(x0,x0+sh[1])
                 sly = slice(y0,y0+sh[0])
+
+                if (slx.stop > data_sh[1]) | (sly.stop > data_sh[0]):
+                    print('skip', file.replace('_sci', '_'+ext))
+                    continue
+                else:
+                    print(file.replace('_sci', '_'+ext))
+                    
+                sci_i = pyfits.open(file.replace('_sci', '_'+ext))
                 data[sly, slx] = sci_i[0].data
         
             mos = pyfits.PrimaryHDU(data=data, header=wh)
@@ -145,25 +191,30 @@ def make_candels_tiles():
             del(data)
     
     # Gzip and sync
-    os.system('gzip {0}-???mas*fits'.format(key))
-    os.system('aws s3 sync --exclude "*" --include "{0}*" ./ s3://grizli-v1/Mosaics/ '.format(key))
+    os.system('gzip --force {0}-???mas*fits'.format(key))
+    os.system('aws s3 sync --exclude "*" --include "{0}-???mas*gz" ./ s3://grizli-v1/Mosaics/ --acl public-read'.format(key))
     
-    # Make catalogs
-    import os
-    from grizli import prep
-    import glob
-    
-    filt_i = 'f814w'
-    
-    files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
-    files.sort()
-    for i, file in enumerate(files):
-        root = file.split('_dr')[0]
-        if os.path.exists('{0}.cat.fits'.format(root)):
-            continue
-        
-        prep.make_SEP_catalog(root, threshold=5, rescale_weight=False) 
-        
+    if make_tile_catalogs:
+        # Make catalogs
+        import os
+        from grizli import prep
+        import glob
+        for filt_i in filts:
+            files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
+            files.sort()
+            for i, file in enumerate(files):
+                
+                print('\n\n#######\n{0}\n#######\n'.format(froot))
+                
+                froot = file.split('_dr')[0]
+                if os.path.exists('{0}.cat.fits'.format(froot)):
+                    continue
+                
+                prep.make_SEP_catalog(froot, threshold=3,
+                                      rescale_weight=False) 
+                os.system('rm {0}_bkg.fits'.format(froot))
+                #os.system('rm {0}_seg.fits'.format(froot))
+                
 def grism_model():
     
     import numpy as np
@@ -184,8 +235,21 @@ def grism_model():
         field_root = root = 'gds-grism-j033236m2748'
     elif key == 'gdn':
         field_root = root = 'gdn-grism-j123656p6215'
-             
-    # IR-combined
+
+    # Optical copy
+    for filt in ['f606w', 'f775w', 'f814w', 'f850lp']:
+        sci_file = '{0}-050mas-{1}_drz_sci.fits.gz'.format(key, filt)
+        if not os.path.exists(sci_file):
+            continue
+        
+        print(sci_file)
+         
+        #Symlink to individual bands
+        os.system('cp -f {0}-050mas-{2}_drz_sci.fits.gz {1}-{2}_drz_sci.fits.gz'.format(key, root, filt))
+        os.system('cp -f {0}-050mas-{2}_drz_wht.fits.gz {1}-{2}_drz_wht.fits.gz'.format(key, root, filt))
+    
+    
+    # IR-combined 
     num = None
     for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
         sci_file = '{0}-100mas-{1}_drz_sci.fits.gz'.format(key, filt)
@@ -240,7 +304,7 @@ def grism_model():
     
     # Gzip and sync
     os.system('gzip {0}*fits'.format(root))
-    os.system('aws s3 sync --exclude "*" --include "{0}*" ./ s3://grizli-v1/Mosaics/ '.format(root))
+    os.system('aws s3 sync --exclude "*" --include "{0}*" ./ s3://grizli-v1/Mosaics/ --acl public-read'.format(root))
      
     ########## Grism prep
     
@@ -249,6 +313,20 @@ def grism_model():
     
     all_visits, all_groups, all_info = np.load('{0}_visits.npy'.format(out_root))
     
+    bucket = 'grizli-v1'
+    base_path='Exposures'
+    
+    for v in all_visits:
+        # Change aws path
+        v['awspath'] = []
+        for file in v['files']:
+            file_root = os.path.basename(file)
+            prog = file_root[:4]
+            dataset = file_root[:9]
+            
+            aws = os.path.join(bucket, base_path, prog, dataset)
+            v['awspath'].append(aws)
+            
     groups = all_groups#[:28]
     visits = []
     for g in groups:
@@ -263,41 +341,83 @@ def grism_model():
             
     np.save(root+'_visits.npy', [visits, groups, all_info[all_info['keep']]])
     
-    visits, groups, info = np.load(root+'_visits.npy')
+    ####### Run model
+    grisms = ['g141', 'g102', 'g800l']
+    
+    if not os.path.exists('{0}-ir_seg.fits'.format(root)):
+        os.system('aws s3 sync s3://grizli-v1/GrismMosaics/ ./ --exclude "*" --include "{0}*"'.format(root))
+        os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}*"'.format(root))
         
-    tab = auto_script.multiband_catalog(field_root=root,
+        print('gunzip {0}*gz'.format(root))
+        os.system('gunzip {0}*gz'.format(root))
+    
+    visits, groups, info = np.load(root+'_visits.npy')
+            
+    if not os.path.exists('{0}_phot.fits'.format(root)):
+       
+        kwargs['multiband_catalog_args']['get_all_filters'] = True
+        tab = auto_script.multiband_catalog(field_root=root,
                                         **kwargs['multiband_catalog_args'])
     
-    kwargs['grism_prep_args']['files'] = []    
+        os.system('rm *bkg.fits')
+        os.system('gzip {0}*seg.fits'.format(root))
+        os.system('aws s3 sync --exclude "*" --include "{0}*seg.fits.gz" --include "{0}*cat.fits" --include "{0}*phot.fits" ./ s3://grizli-v1/Mosaics/ --acl public-read'.format(root))
+        os.system('gunzip {0}*seg.fits.gz'.format(root))
+    
+    grism_files = {}
+    for g in grisms:
+        grism_files[g] = []
+        
     for v in visits:
+        has_grism = False
+        for g in grisms:
+            has_grism |= ('-'+g in v['product'])
+
+        if not has_grism:
+            continue
+        else:
+            print('Add visit {0}'.format(v['product']))
+        
+        for g in grisms:
+            if '-'+g in v['product']:
+                grism_files[g].extend(v['files'])        
+                 
         for aws, f in zip(v['awspath'], v['files']):
             if os.path.exists(f):
                 continue
             else:
                 os.system('aws s3 cp s3://{0}/{1} .'.format(aws, f))
-                
-        kwargs['grism_prep_args']['files'].extend(v['files'])
+            
+    for g in grisms:
+        os.chdir('../Prep')
+        print(g, len(grism_files[g]), len(np.unique(grism_files[g])))
+        grism_files[g].sort()
         
-    grp = auto_script.grism_prep(field_root=root, **kwargs['grism_prep_args'])
-    
-    # Drizzled grp objects
-    # All files
-    import glob
-    if len(glob.glob('{0}*_grism*fits*'.format(root))) == 0:
-        grism_files = glob.glob('*GrismFLT.fits')
-        grism_files.sort()
-        #
+        kwargs['grism_prep_args']['files'] = grism_files[g]
+        grp = auto_script.grism_prep(field_root=root, **kwargs['grism_prep_args'])
+        del(grp)
+        
+        grism_flt = []
+        for file in grism_files[g]:
+            grism_flt.extend(glob.glob(file.split('_fl')[0]+'*GrismFLT.fits'))
+            
         catalog = glob.glob('{0}-*.cat.fits'.format(root))[0]
         try:
             seg_file = glob.glob('{0}-*_seg.fits'.format(root))[0]
         except:
             seg_file = None
-        #    
-        grp = multifit.GroupFLT(grism_files=grism_files, direct_files=[], ref_file=None, seg_file=seg_file, catalog=catalog, cpu_count=-1, sci_extn=1, pad=256)
-        #
+            
+        grp = multifit.GroupFLT(grism_files=grism_flt, direct_files=[], ref_file=None, seg_file=seg_file, catalog=catalog, cpu_count=-1, sci_extn=1, pad=256)
+        
         # Make drizzle model images
         grp.drizzle_grism_models(root=root, kernel='point', scale=0.15)
+        del(grp)
+        os.system('aws s3 sync --exclude "*" --include "{0}*_grism*" ./ s3://grizli-v1/GrismMosaics/ --acl public-read'.format(key))
+        os.system('aws s3 sync --exclude "*" --include "*GrismFLT*" --include "*wcs.fits" ./ s3://grizli-v1/GrismMosaics/ --acl public-read'.format(key))
     
+    
+    ################
+      
     # Extractions
     pline = auto_script.DITHERED_PLINE
     auto_script.generate_fit_params(field_root=root, prior=None, MW_EBV=0.019, pline=pline, fit_only_beams=True, run_fit=True, poly_order=7, fsps=True, min_sens=0.001, sys_err=0.03, fcontam=0.2, zr=[0.05, 3.4], save_file='fit_args.npy', fit_trace_shift=False, include_photometry=True, use_phot_obj=False)
@@ -495,6 +615,7 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
                 pyfits.writeto(sci_file, data=sci, header=h, overwrite=True)
                 pyfits.writeto(wht_file, data=wht, header=h, overwrite=True)
             
+            print('gzip {0}_dr*fits'.format(visits[0]['product']))
             os.system('gzip {0}_dr*fits'.format(visits[0]['product']))
             
             if output_bucket is not None:

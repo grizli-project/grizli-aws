@@ -93,7 +93,7 @@ def define_tiles(ra=109.3935148, dec=37.74934031, size=(24, 24), tile_size=6, ov
     return tile_wcs
     
 ####
-def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f105w','f814w','f098m','f606w','f475w','f850lp'], pixfrac=0.5, output_bucket=None):   
+def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f105w','f814w','f098m','f606w','f475w','f850lp'], pixfrac=0.5, output_bucket=None, clean_intermediate=False):   
     """
     mkdir ~/CosmosMosaic
     cd ~/CosmosMosaic
@@ -199,10 +199,7 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
             old_files = glob.glob('{0}*'.format(visits[0]['product']))
             for file in old_files:
                 os.remove(file)
-                
-            # ref_header = pyfits.open(visits[0]['reference'])[0].header
-            # utils.drizzle_from_visit(visits[0], ref_header, pixfrac=pixfrac, clean=False, include_saturated=is_ir, kernel='square') 
-
+            
             print('\n\n\n#####\nDrizzle mosaic: {0}\n#####\n\n\n'.format(visits[0]['product']))
             
             try:
@@ -211,7 +208,7 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
                 
                 # Use compact drizzler
                 ref_header = pyfits.open(visits[0]['reference'])[0].header
-                status = utils.drizzle_from_visit(visits[0], ref_header, pixfrac=pixfrac, clean=False, include_saturated=is_ir, kernel='square') 
+                status = utils.drizzle_from_visit(visits[0], ref_header, pixfrac=pixfrac, clean=clean_intermediate, include_saturated=is_ir, kernel='square') 
                 outsci, outwht, outh = status
                 
                 prod = visits[0]['product']

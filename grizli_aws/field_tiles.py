@@ -44,6 +44,209 @@ def tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6):
     fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234+dy, 'size':size, 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale, 'theta':theta}
     
     return fields
+#
+def define_tiles(ra=109.3935148, dec=37.74934031, size=(24, 24), tile_size=6, overlap=0.3, field='macs0717', pixscale=0.05, theta=0):
+    """
+    Make tiles
+    """
+    from grizli import utils
+    import astropy.wcs as pywcs
+    from collections import OrderedDict
+            
+    tile_wcs = OrderedDict()
+    
+    size_per = tile_size-overlap
+    nx = int(np.ceil(size[0]/size_per))
+    ny = int(np.ceil(size[1]/size_per))
+    
+    sx = nx*tile_size-(nx-1)*overlap
+    sy = ny*tile_size-(ny-1)*overlap
+    px = int(tile_size*60/pixscale)
+
+    # Even number of pixels
+    header, parent_wcs = utils.make_wcsheader(ra=ra, dec=dec, size=(sx*60, sy*60), pixscale=pixscale, theta=theta)
+    for i in range(nx):
+        x0 = int(i*px-i*(overlap/tile_size*px))
+        slx = slice(x0, x0+px)
+        for j in range(ny):
+            y0 = int(j*px-j*(overlap/tile_size*px))
+            sly = slice(y0, y0+px)
+            
+            slice_header = utils.get_wcs_slice_header(parent_wcs, slx, sly)
+            slice_wcs = pywcs.WCS(slice_header)
+            slice_wcs._header = slice_header
+            #tile=(i+1)*10+(j+1)
+            tile = '{0:02d}.{1:02d}'.format(i+1, j+1)
+            tile_wcs[tile] = slice_wcs
+    
+    np.save('{0}_{1:02d}mas_tile_wcs.npy'.format(field, int(pixscale*1000)),[tile_wcs])
+    
+    fpr = open('{0}_{1:02d}mas_tile_wcs.reg'.format(field, int(pixscale*1000)),'w')
+    fpr.write('fk5\n')
+    for t in tile_wcs:
+        fp = tile_wcs[t].calc_footprint()
+        pstr = 'polygon('+','.join(['{0:.6f}'.format(i) for i in fp.flatten()])+') # text={{{0}}}\n'.format(t)
+        fpr.write(pstr)
+    fpr.close()
+    
+    return tile_wcs
+    
+####
+def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f105w','f814w','f098m','f606w','f475w','f850lp'], pixfrac=0.5, output_bucket=None):   
+    """
+    mkdir ~/CosmosMosaic
+    cd ~/CosmosMosaic
+    
+    aws s3 cp s3://grizli-preprocess/CosmosMosaic/cosmos_acs_tile_wcs.npy .
+    aws s3 cp s3://grizli-preprocess/CosmosMosaic/macs0717_30mas_tile_wcs.npy .
+    aws s3 sync --exclude "*" --include "cosmos_visits*" s3://grizli-preprocess/CosmosMosaic/ ./ 
+
+    aws s3 sync --exclude "*" --include "grizli_visits*" s3://grizli-preprocess/CosmosMosaic/ ./ 
+    
+    """ 
+    import numpy as np
+    import os
+    import copy
+    import glob
+    
+    import astropy.io.fits as pyfits
+    import astropy.wcs as pwcs
+    from grizli import utils, prep
+                
+    # By filter
+    groups = {}
+    for visit in visits:
+        if 'footprints' not in visit:
+            continue
+        
+        filt = visit['product'].split('-')[-1]
+        if filt not in groups:
+            groups[filt] = {'filter':filt, 'files':[], 'footprints':[], 'awspath':[]}
+        
+        for l in ['files', 'footprints', 'awspath']:
+            groups[filt][l].extend(visit[l])
+                    
+    for t in list(tiles.keys()):
+        tile = tiles[t]
+        
+        try:
+            psquare = np.sqrt(tile.wcs.cd[0,0]**2+tile.wcs.cd[0,1]**2)
+        except:
+            psquare = np.sqrt(tile.wcs.pc[0,0]**2+tile.wcs.pc[0,1]**2)
+            
+        fine_mas = np.abs(int(np.round(psquare*3600*1000)))
+        
+        
+        h = tile._header
+        tile._naxis = [h['NAXIS1'],h['NAXIS2']]
+        
+        wh = utils.to_header(tile)
+        for k in ['NAXIS1','NAXIS2']:
+            wh[k] //= 2
+        
+        wh['CRPIX1'] = (wh['CRPIX1']+0.5)/2.
+        wh['CRPIX2'] = (wh['CRPIX2']+0.5)/2.
+        
+        for k in ['CD1_1','CD1_2', 'CD2_1','CD2_2']:
+            if k in wh:
+                wh[k] *= 2
+        
+        #w60 = pywcs.WCS(wh)
+        h0 = utils.to_header(tile)
+        d0 = np.zeros((h0['NAXIS2'], h0['NAXIS1']), dtype=np.uint8)
+        d0[::2,:] = 1
+        d0[:,::2] = 1
+        pyfits.writeto('fine_grid.fits', data=d0, header=h0, overwrite=True, output_verify='fix')
+        
+        h1 = wh
+        d1 = np.zeros((h1['NAXIS2'], h1['NAXIS1']), dtype=np.uint8)
+        d1[::2,:] = 1
+        d1[:,::2] = 1
+        pyfits.writeto('coarse_grid.fits', data=d1, header=h1, overwrite=True, output_verify='fix')
+                
+        for filt in filts:
+            if filt not in groups:
+                continue
+            
+            visits = [copy.deepcopy(groups[filt])]
+            try:
+                os.remove('astrodrizzle.log')
+            except:
+                pass
+                      
+            version = 'v0.03'
+            if filt.startswith('f1') | filt.startswith('f098m') | filt.startswith('g1'):                    
+                visits[0]['reference'] = 'coarse_grid.fits'
+                visits[0]['product'] = '{0}-{1}-{2:03d}mas-{3}'.format(prefix, t, fine_mas*2, filt)
+                
+            else:
+                visits[0]['reference'] = 'fine_grid.fits'
+                visits[0]['product'] = '{0}-{1}-{2:03d}mas-{3}'.format(prefix, t, fine_mas, filt)
+            
+            if len(glob.glob('{0}*_dr*gz'.format(visits[0]['product']))) > 0:
+                continue
+                
+            old_files = glob.glob('{0}*'.format(visits[0]['product']))
+            for file in old_files:
+                os.remove(file)
+                
+            try:
+                prep.drizzle_overlaps(visits, parse_visits=False, check_overlaps=True, pixfrac=pixfrac, skysub=False, final_wcs=True, final_wht_type='IVM', static=False, max_files=260, fix_wcs_system=True)
+            except:
+                os.system('date > {0}.failed'.format(visits[0]['product']))
+                continue
+                
+            #os.system('rm *_fl*fits')
+
+            # Combine split mosaics
+            tile_files = glob.glob(visits[0]['product']+'-0*sci.fits')
+            if len(tile_files) > 0:
+                tile_files.sort()
+
+                im = pyfits.open(visits[0]['reference'])
+                img = np.zeros_like(im[0].data, dtype=np.float32)
+                wht = np.zeros_like(im[0].data, dtype=np.float32)
+
+                exptime = 0.
+                ndrizim = 0.
+                ext = 'sci'
+
+                for i, tile_file in enumerate(tile_files):
+                    im = pyfits.open(tile_file)
+                    wht_i = pyfits.open(tile_file.replace('_sci.f', '_wht.f'))
+                    print(i, filt, tile_file, wht_i.filename())
+
+                    exptime += im[0].header['EXPTIME']
+                    ndrizim += im[0].header['NDRIZIM']
+
+                    if i == 0:
+                        h = im[0].header
+
+                    img += im[0].data*wht_i[0].data
+                    wht += wht_i[0].data
+
+                sci = img/wht
+                sci[wht == 0] = 0
+
+                h['EXPTIME'] = exptime
+                h['NDRIZIM'] = ndrizim
+
+                sci_file = '{0}_drz_sci.fits'.format(visits[0]['product'])
+                wht_file = '{0}_drz_wht.fits'.format(visits[0]['product'])
+                
+                pyfits.writeto(sci_file, data=sci, header=h, overwrite=True)
+                pyfits.writeto(wht_file, data=wht, header=h, overwrite=True)
+            
+            print('gzip {0}_dr*fits'.format(visits[0]['product']))
+            os.system('gzip {0}_dr*fits'.format(visits[0]['product']))
+            
+            if output_bucket is not None:
+                os.system('aws s3 sync --exclude "*" --include "{0}_dr*" ./ {1} --acl public-read'.format(visits[0]['product'], output_bucket))
+            
+            new_files = glob.glob('{0}*fits'.format(visits[0]['product']))
+            for file in new_files:
+                print('rm '+file)
+                os.remove(file)
         
 def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/'):
     
@@ -52,6 +255,9 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
     import astropy.io.fits as pyfits
     import glob
     from grizli import prep, utils
+    import os
+    
+    from grizli_aws.field_tiles import define_tiles, drizzle_tiles, tile_parameters
     
     try:
         test = key
@@ -77,9 +283,6 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
         dy = np.diff(ylim)[0]*60
         print('\'ra\':{0:.4f}, \'dec\':{1:.4f}, \'size\':({2:.1f}, {3:.1f})'.format(ra, dec, dx, dy))
     
-    if False:
-        from grizli_aws.field_tiles import define_tiles, drizzle_tiles, tile_parameters
-
     fields = tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6)
     
     tiles = define_tiles(**fields[key])
@@ -656,207 +859,5 @@ def grism_model():
     fitting.run_all_parallel(ids[0], verbose=True) 
     
     
-def define_tiles(ra=109.3935148, dec=37.74934031, size=(24, 24), tile_size=6, overlap=0.3, field='macs0717', pixscale=0.05, theta=0):
-    """
-    Make tiles
-    """
-    from grizli import utils
-    import astropy.wcs as pywcs
-    from collections import OrderedDict
-            
-    tile_wcs = OrderedDict()
-    
-    size_per = tile_size-overlap
-    nx = int(np.ceil(size[0]/size_per))
-    ny = int(np.ceil(size[1]/size_per))
-    
-    sx = nx*tile_size-(nx-1)*overlap
-    sy = ny*tile_size-(ny-1)*overlap
-    px = int(tile_size*60/pixscale)
-
-    # Even number of pixels
-    header, parent_wcs = utils.make_wcsheader(ra=ra, dec=dec, size=(sx*60, sy*60), pixscale=pixscale, theta=theta)
-    for i in range(nx):
-        x0 = int(i*px-i*(overlap/tile_size*px))
-        slx = slice(x0, x0+px)
-        for j in range(ny):
-            y0 = int(j*px-j*(overlap/tile_size*px))
-            sly = slice(y0, y0+px)
-            
-            slice_header = utils.get_wcs_slice_header(parent_wcs, slx, sly)
-            slice_wcs = pywcs.WCS(slice_header)
-            slice_wcs._header = slice_header
-            #tile=(i+1)*10+(j+1)
-            tile = '{0:02d}.{1:02d}'.format(i+1, j+1)
-            tile_wcs[tile] = slice_wcs
-    
-    np.save('{0}_{1:02d}mas_tile_wcs.npy'.format(field, int(pixscale*1000)),[tile_wcs])
-    
-    fpr = open('{0}_{1:02d}mas_tile_wcs.reg'.format(field, int(pixscale*1000)),'w')
-    fpr.write('fk5\n')
-    for t in tile_wcs:
-        fp = tile_wcs[t].calc_footprint()
-        pstr = 'polygon('+','.join(['{0:.6f}'.format(i) for i in fp.flatten()])+') # text={{{0}}}\n'.format(t)
-        fpr.write(pstr)
-    fpr.close()
-    
-    return tile_wcs
-    
-####
-def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f105w','f814w','f098m','f606w','f475w','f850lp'], pixfrac=0.5, output_bucket=None):   
-    """
-    mkdir ~/CosmosMosaic
-    cd ~/CosmosMosaic
-    
-    aws s3 cp s3://grizli-preprocess/CosmosMosaic/cosmos_acs_tile_wcs.npy .
-    aws s3 cp s3://grizli-preprocess/CosmosMosaic/macs0717_30mas_tile_wcs.npy .
-    aws s3 sync --exclude "*" --include "cosmos_visits*" s3://grizli-preprocess/CosmosMosaic/ ./ 
-
-    aws s3 sync --exclude "*" --include "grizli_visits*" s3://grizli-preprocess/CosmosMosaic/ ./ 
-    
-    """ 
-    import numpy as np
-    import os
-    import copy
-    import glob
-    
-    import astropy.io.fits as pyfits
-    import astropy.wcs as pwcs
-    from grizli import utils, prep
-                
-    # By filter
-    groups = {}
-    for visit in visits:
-        if 'footprints' not in visit:
-            continue
-        
-        filt = visit['product'].split('-')[-1]
-        if filt not in groups:
-            groups[filt] = {'filter':filt, 'files':[], 'footprints':[], 'awspath':[]}
-        
-        for l in ['files', 'footprints', 'awspath']:
-            groups[filt][l].extend(visit[l])
-                    
-    for t in list(tiles.keys()):
-        tile = tiles[t]
-        
-        try:
-            psquare = np.sqrt(tile.wcs.cd[0,0]**2+tile.wcs.cd[0,1]**2)
-        except:
-            psquare = np.sqrt(tile.wcs.pc[0,0]**2+tile.wcs.pc[0,1]**2)
-            
-        fine_mas = np.abs(int(np.round(psquare*3600*1000)))
-        
-        
-        h = tile._header
-        tile._naxis = [h['NAXIS1'],h['NAXIS2']]
-        
-        wh = utils.to_header(tile)
-        for k in ['NAXIS1','NAXIS2']:
-            wh[k] //= 2
-        
-        wh['CRPIX1'] = (wh['CRPIX1']+0.5)/2.
-        wh['CRPIX2'] = (wh['CRPIX2']+0.5)/2.
-        
-        for k in ['CD1_1','CD1_2', 'CD2_1','CD2_2']:
-            if k in wh:
-                wh[k] *= 2
-        
-        #w60 = pywcs.WCS(wh)
-        h0 = utils.to_header(tile)
-        d0 = np.zeros((h0['NAXIS2'], h0['NAXIS1']), dtype=np.uint8)
-        d0[::2,:] = 1
-        d0[:,::2] = 1
-        pyfits.writeto('fine_grid.fits', data=d0, header=h0, overwrite=True, output_verify='fix')
-        
-        h1 = wh
-        d1 = np.zeros((h1['NAXIS2'], h1['NAXIS1']), dtype=np.uint8)
-        d1[::2,:] = 1
-        d1[:,::2] = 1
-        pyfits.writeto('coarse_grid.fits', data=d1, header=h1, overwrite=True, output_verify='fix')
-                
-        for filt in filts:
-            if filt not in groups:
-                continue
-            
-            visits = [copy.deepcopy(groups[filt])]
-            try:
-                os.remove('astrodrizzle.log')
-            except:
-                pass
-                      
-            version = 'v0.03'
-            if filt.startswith('f1') | filt.startswith('f098m') | filt.startswith('g1'):                    
-                visits[0]['reference'] = 'coarse_grid.fits'
-                visits[0]['product'] = '{0}-{1}-{2:03d}mas-{3}'.format(prefix, t, fine_mas*2, filt)
-                
-            else:
-                visits[0]['reference'] = 'fine_grid.fits'
-                visits[0]['product'] = '{0}-{1}-{2:03d}mas-{3}'.format(prefix, t, fine_mas, filt)
-            
-            if len(glob.glob('{0}*_dr*gz'.format(visits[0]['product']))) > 0:
-                continue
-                
-            old_files = glob.glob('{0}*'.format(visits[0]['product']))
-            for file in old_files:
-                os.remove(file)
-                
-            try:
-                prep.drizzle_overlaps(visits, parse_visits=False, check_overlaps=True, pixfrac=pixfrac, skysub=False, final_wcs=True, final_wht_type='IVM', static=False, max_files=260, fix_wcs_system=True)
-            except:
-                os.system('date > {0}.failed'.format(visits[0]['product']))
-                continue
-                
-            #os.system('rm *_fl*fits')
-
-            # Combine split mosaics
-            tile_files = glob.glob(visits[0]['product']+'-0*sci.fits')
-            if len(tile_files) > 0:
-                tile_files.sort()
-
-                im = pyfits.open(visits[0]['reference'])
-                img = np.zeros_like(im[0].data, dtype=np.float32)
-                wht = np.zeros_like(im[0].data, dtype=np.float32)
-
-                exptime = 0.
-                ndrizim = 0.
-                ext = 'sci'
-
-                for i, tile_file in enumerate(tile_files):
-                    im = pyfits.open(tile_file)
-                    wht_i = pyfits.open(tile_file.replace('_sci.f', '_wht.f'))
-                    print(i, filt, tile_file, wht_i.filename())
-
-                    exptime += im[0].header['EXPTIME']
-                    ndrizim += im[0].header['NDRIZIM']
-
-                    if i == 0:
-                        h = im[0].header
-
-                    img += im[0].data*wht_i[0].data
-                    wht += wht_i[0].data
-
-                sci = img/wht
-                sci[wht == 0] = 0
-
-                h['EXPTIME'] = exptime
-                h['NDRIZIM'] = ndrizim
-
-                sci_file = '{0}_drz_sci.fits'.format(visits[0]['product'])
-                wht_file = '{0}_drz_wht.fits'.format(visits[0]['product'])
-                
-                pyfits.writeto(sci_file, data=sci, header=h, overwrite=True)
-                pyfits.writeto(wht_file, data=wht, header=h, overwrite=True)
-            
-            print('gzip {0}_dr*fits'.format(visits[0]['product']))
-            os.system('gzip {0}_dr*fits'.format(visits[0]['product']))
-            
-            if output_bucket is not None:
-                os.system('aws s3 sync --exclude "*" --include "{0}_dr*" ./ {1} --acl public-read'.format(visits[0]['product'], output_bucket))
-            
-            new_files = glob.glob('{0}*fits'.format(visits[0]['product']))
-            for file in new_files:
-                print('rm '+file)
-                os.remove(file)
             
             

@@ -61,7 +61,7 @@ for id in $ids; do
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_preprocess","halt"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
     
     ########### new preprocessing for CANDELS fields
-    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=True --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
         
     ############# Run grism preprep
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_grism\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1

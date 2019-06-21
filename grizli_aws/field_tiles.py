@@ -97,6 +97,8 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
     
     #filts = ['f606w', 'f775w', 'f814w', 'f850lp']
     
+    tiles = np.load('{0}_50mas_tile_wcs.npy'.format(key))[0]
+    
     visit_file = glob.glob('{0}-j*visits.npy'.format(key))
     if len(visit_file) == 0:
         os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}*npy"'.format(key))
@@ -189,14 +191,19 @@ def combine_tile_filters(key='egs', skip_existing=True):
             
             ### TBD - full combination
             
-def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILTERS):
+def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILTERS, combine_catalogs=True):
 
     # Make catalogs
     import os
-    from grizli import prep
     import glob
+    import astropy.table
+    import numpy as np
+    
+    from grizli import utils, prep
+    import sep
+
     for filt_i in filts:
-        files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
+        files = glob.glob(key+'-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
         files.sort()
         for i, file in enumerate(files):
 
@@ -215,8 +222,41 @@ def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILT
             except:
                 print('\n\n !!!! Failed: ', froot)
                 pass
-                
-def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all'):
+        
+        if combine_catalogs:
+            
+            cat_files = glob.glob(key+'-??.??-*{0}*cat.fits'.format(filt_i))
+            if len(cat_files) == 0:
+                continue
+
+            cat_files.sort()
+
+            cats = [utils.read_catalog(file) for file in cat_files]
+
+            ref = cats[0].copy()
+
+            id_max = [ref['NUMBER'].max()]
+
+            for ic in range(1, len(cats)):
+                print(cat_files[ic])
+                cat = cats[ic]
+                not_edge = (cat['FLAG'] & sep.OBJ_TRUNC) == 0 
+
+                idx, dr = cat.match_to_catalog_sky(ref)     
+                new = dr.value > 0.1
+
+                id_max.append(cat['NUMBER'].max())
+
+                cat['NUMBER'] += np.sum(id_max[:-1])
+
+                ref = astropy.table.vstack([ref[new], cat])
+
+            out_root = '{0}-{1}_tiles'.format(key, filt_i)
+            ref.write(out_root+'.fits', overwrite=True)
+            label = [int(i) for i in ref['NUMBER']]
+            prep.table_to_regions(ref, out_root+'.reg', comment=label)
+                  
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all', extensions = ['sci','wht']):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -301,7 +341,6 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all'):
         overlap_arcmin = 0.3    
         olap = int(overlap_arcmin*60/coarse_pix*(1+is_fine))
     
-        extensions = ['sci','wht','seg']
         for ext in extensions:
             if ext == 'seg':
                 data = np.zeros((sh[0]*ny-olap*(ny-1), sh[1]*nx-olap*(nx-1)), dtype=np.int32)
@@ -701,7 +740,11 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
     for t in list(tiles.keys()):
         tile = tiles[t]
         
-        psquare = np.sqrt(tile.wcs.cd[0,0]**2+tile.wcs.cd[0,1]**2)
+        try:
+            psquare = np.sqrt(tile.wcs.cd[0,0]**2+tile.wcs.cd[0,1]**2)
+        except:
+            psquare = np.sqrt(tile.wcs.pc[0,0]**2+tile.wcs.pc[0,1]**2)
+            
         fine_mas = np.abs(int(np.round(psquare*3600*1000)))
         
         

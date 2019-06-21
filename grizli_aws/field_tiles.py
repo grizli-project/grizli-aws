@@ -8,6 +8,7 @@ from grizli import prep, utils
 
 IR_FILTERS = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]
 OPTICAL_FILTERS = ['f606w', 'f775w', 'f814w', 'f850lp']
+GRISMS = ['g102', 'g141', 'g800l']
 
 def test_egs():
     
@@ -166,6 +167,7 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
                 
         for filt in filts:
             if filt not in groups:
+                print('Filter {0} not found in the visit groups'.format(filt))
                 continue
             
             visits = [copy.deepcopy(groups[filt])]
@@ -178,20 +180,52 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
             if filt.startswith('f1') | filt.startswith('f098m') | filt.startswith('g1'):                    
                 visits[0]['reference'] = 'coarse_grid.fits'
                 visits[0]['product'] = '{0}-{1}-{2:03d}mas-{3}'.format(prefix, t, fine_mas*2, filt)
+                is_ir=True
+                ref_header = h1
+                dr = 'drz'
                 
             else:
                 visits[0]['reference'] = 'fine_grid.fits'
                 visits[0]['product'] = '{0}-{1}-{2:03d}mas-{3}'.format(prefix, t, fine_mas, filt)
+                is_ir=False
+                ref_header = h0
+                dr = 'drc'
             
-            if len(glob.glob('{0}*_dr*gz'.format(visits[0]['product']))) > 0:
+            old_files = glob.glob('{0}*_dr*gz'.format(visits[0]['product']))    
+            if len(old_files) > 0:
+                print('Files found: {0}'.format(' '.join(old_files)))
                 continue
                 
             old_files = glob.glob('{0}*'.format(visits[0]['product']))
             for file in old_files:
                 os.remove(file)
                 
+            # ref_header = pyfits.open(visits[0]['reference'])[0].header
+            # utils.drizzle_from_visit(visits[0], ref_header, pixfrac=pixfrac, clean=False, include_saturated=is_ir, kernel='square') 
+
+            print('\n\n\n#####\nDrizzle mosaic: {0}\n#####\n\n\n'.format(visits[0]['product']))
+            
             try:
-                prep.drizzle_overlaps(visits, parse_visits=False, check_overlaps=True, pixfrac=pixfrac, skysub=False, final_wcs=True, final_wht_type='IVM', static=False, max_files=260, fix_wcs_system=True)
+                #prep.drizzle_overlaps(visits, parse_visits=False, check_overlaps=True, pixfrac=pixfrac, skysub=False, final_wcs=True, final_wht_type='IVM', static=False, max_files=260, fix_wcs_system=True)
+                #
+                
+                # Use compact drizzler
+                ref_header = pyfits.open(visits[0]['reference'])[0].header
+                status = utils.drizzle_from_visit(visits[0], ref_header, pixfrac=pixfrac, clean=False, include_saturated=is_ir, kernel='square') 
+                outsci, outwht, outh = status
+                
+                prod = visits[0]['product']
+                
+                pyfits.writeto('{0}_{1}_sci.fits'.format(prod, dr), 
+                               data=outsci, header=outh, overwrite=True, 
+                               output_verify='fix')
+
+                pyfits.writeto('{0}_{1}_wht.fits'.format(prod, dr), 
+                               data=outwht, header=outh, overwrite=True, 
+                               output_verify='fix')
+                
+                #print(visits[0])
+                
             except:
                 os.system('date > {0}.failed'.format(visits[0]['product']))
                 continue
@@ -199,43 +233,43 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
             #os.system('rm *_fl*fits')
 
             # Combine split mosaics
-            tile_files = glob.glob(visits[0]['product']+'-0*sci.fits')
-            if len(tile_files) > 0:
-                tile_files.sort()
-
-                im = pyfits.open(visits[0]['reference'])
-                img = np.zeros_like(im[0].data, dtype=np.float32)
-                wht = np.zeros_like(im[0].data, dtype=np.float32)
-
-                exptime = 0.
-                ndrizim = 0.
-                ext = 'sci'
-
-                for i, tile_file in enumerate(tile_files):
-                    im = pyfits.open(tile_file)
-                    wht_i = pyfits.open(tile_file.replace('_sci.f', '_wht.f'))
-                    print(i, filt, tile_file, wht_i.filename())
-
-                    exptime += im[0].header['EXPTIME']
-                    ndrizim += im[0].header['NDRIZIM']
-
-                    if i == 0:
-                        h = im[0].header
-
-                    img += im[0].data*wht_i[0].data
-                    wht += wht_i[0].data
-
-                sci = img/wht
-                sci[wht == 0] = 0
-
-                h['EXPTIME'] = exptime
-                h['NDRIZIM'] = ndrizim
-
-                sci_file = '{0}_drz_sci.fits'.format(visits[0]['product'])
-                wht_file = '{0}_drz_wht.fits'.format(visits[0]['product'])
-                
-                pyfits.writeto(sci_file, data=sci, header=h, overwrite=True)
-                pyfits.writeto(wht_file, data=wht, header=h, overwrite=True)
+            # tile_files = glob.glob(visits[0]['product']+'-0*sci.fits')
+            # if len(tile_files) > 0:
+            #     tile_files.sort()
+            # 
+            #     im = pyfits.open(visits[0]['reference'])
+            #     img = np.zeros_like(im[0].data, dtype=np.float32)
+            #     wht = np.zeros_like(im[0].data, dtype=np.float32)
+            # 
+            #     exptime = 0.
+            #     ndrizim = 0.
+            #     ext = 'sci'
+            # 
+            #     for i, tile_file in enumerate(tile_files):
+            #         im = pyfits.open(tile_file)
+            #         wht_i = pyfits.open(tile_file.replace('_sci.f', '_wht.f'))
+            #         print(i, filt, tile_file, wht_i.filename())
+            # 
+            #         exptime += im[0].header['EXPTIME']
+            #         ndrizim += im[0].header['NDRIZIM']
+            # 
+            #         if i == 0:
+            #             h = im[0].header
+            # 
+            #         img += im[0].data*wht_i[0].data
+            #         wht += wht_i[0].data
+            # 
+            #     sci = img/wht
+            #     sci[wht == 0] = 0
+            # 
+            #     h['EXPTIME'] = exptime
+            #     h['NDRIZIM'] = ndrizim
+            # 
+            #     sci_file = '{0}_drz_sci.fits'.format(visits[0]['product'])
+            #     wht_file = '{0}_drz_wht.fits'.format(visits[0]['product'])
+            #     
+            #     pyfits.writeto(sci_file, data=sci, header=h, overwrite=True)
+            #     pyfits.writeto(wht_file, data=wht, header=h, overwrite=True)
             
             print('gzip {0}_dr*fits'.format(visits[0]['product']))
             os.system('gzip {0}_dr*fits'.format(visits[0]['product']))
@@ -286,14 +320,7 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
     fields = tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6)
     
     tiles = define_tiles(**fields[key])
-    
-    if False:
-        # test single tile
-        t = '01.01'
-        one_tile = {}
-        one_tile[t] = tiles[t]
-        drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
-        
+            
     #all_visits, all_groups, all_info = np.load('goodss-j033236m2748_visits.npy')
     
     #filts = ['f098m', 'f110w', 'f140w', 'f105w', 'f160w','f125w' ]
@@ -308,6 +335,25 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
         visit_file = glob.glob('{0}-j*visits.npy'.format(key))
     
     all_visits, all_groups, info = np.load(visit_file[0])
+    
+    # Replace aws path for IR
+    for v in all_visits:
+        if '_flt' in v['files'][0]:
+            v['awspath'] = []
+            for file in v['files']:
+                file_root = os.path.basename(file)
+                prog = file_root[:4]
+                dataset = file_root[:9]
+
+                aws = os.path.join('grizli-v1', 'Exposures', prog, dataset)
+                v['awspath'].append(aws)
+            
+    if False:
+        # test single tile
+        t = '01.01'
+        one_tile = {}
+        one_tile[t] = tiles[t]
+        drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
     
     drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
 

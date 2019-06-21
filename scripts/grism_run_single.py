@@ -121,6 +121,10 @@ def auto_run(root='j023507-040202', args=[]):
     kwargs['preprocess_args']['parent_radec'] = parent_radec
     kwargs['preprocess_args']['master_radec'] = master_radec
     
+    kwargs['is_dash'] = '14114' in tab['proposal_id']
+    if kwargs['is_dash']:
+        print('\n\n!!! Process as DASH !!!!\n\n')
+        
     # Limited filters
     kwargs['only_preprocess'] = False
     kwargs['filters'] = default_params.IR_W_FILTERS + default_params.IR_GRISMS

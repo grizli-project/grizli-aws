@@ -278,6 +278,9 @@ def go():
 
     np.save('{0}_visits.npy'.format(out_root), [all_visits, all_groups, all_info])
     
+    if False:
+        os.system('aws s3 cp {0}_visits.npy s3://grizli-v1/Mosaics/ --acl public-read'.format(out_root))
+        
     all_visits, all_groups, all_info = np.load('{0}_visits.npy'.format(out_root))
     
     ########

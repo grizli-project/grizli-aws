@@ -279,7 +279,7 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
                 print('rm '+file)
                 os.remove(file)
         
-def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/'):
+def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', clean_intermediate=False):
     
     import numpy as np
     import matplotlib.pyplot as plt
@@ -352,7 +352,7 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
         one_tile[t] = tiles[t]
         drizzle_tiles(all_visits, one_tile, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
     
-    drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket)
+    drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket, clean_intermediate=clean_intermediate)
 
 def combine_tile_filters(key='egs', skip_existing=True):
     """

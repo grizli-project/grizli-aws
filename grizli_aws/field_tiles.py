@@ -618,7 +618,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all', extens
                 data[sly, slx] = sci_i[0].data
         
             mos = pyfits.PrimaryHDU(data=data, header=wh)
-            outfile = '{0}-{1:03d}mas-{2}_{3}.fits'.format(key, 100//(1+is_fine), the_filter.lower(), out_ext)
+            outfile = '{0}-{1:03d}mas-{2}_{3}.fits'.format(key, 100//(1+is_fine), filt_i.lower(), out_ext)
             mos.writeto(outfile, overwrite=True)
         
             del(data)
@@ -639,6 +639,21 @@ def grism_prep():
     from grizli.pipeline import auto_script
     kwargs = auto_script.get_yml_parameters()
     
+    if False:
+        # Test cdatalog parameters
+        kwargs['multiband_catalog_args']['detection_root'] = 'gds-03.04-100mas-ir'
+        kwargs['multiband_catalog_args']['field_root'] = 'gds-03.04-*mas'
+        kwargs['multiband_catalog_args']['output_root'] = 'gds-03.04'
+        kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w'][::-1]
+        auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
+
+        kwargs['multiband_catalog_args']['detection_root'] = 'gds-100mas-ir'
+        kwargs['multiband_catalog_args']['field_root'] = 'gds-???mas'
+        kwargs['multiband_catalog_args']['output_root'] = 'gds-mosaic'
+        kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w'][::-1]
+        auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
+        
+        
     if key == 'uds':
         field_root = root = 'uds-grism-j021732m0512'
     elif key == 'egs':

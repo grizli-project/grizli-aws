@@ -278,7 +278,7 @@ if [ $nbeams -gt 0 ]; then
     aws s3 sync --exclude "*" --include "${root}*full.fits" --include "${root}*stack.png" --include "*cat.fits" --include "*phot.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
     
     # WITHOUT stack.png - comment out for production
-    # aws s3 sync --exclude "*" --include "${root}*full.fits" --include "*cat.fits" --include "*phot.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
+    aws s3 sync --exclude "*" --include "${root}*full.fits" --include "*cat.fits" --include "*phot.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./
     
     #BUCKET=grizli
     grizli_extract_and_fit.py ${root} summary

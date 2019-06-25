@@ -502,7 +502,7 @@ def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILT
             label = [int(i) for i in ref['NUMBER']]
             prep.table_to_regions(ref, out_root+'.reg', comment=label)
                   
-def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht']):
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], sync=True):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -628,8 +628,9 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
             del(data)
     
     # Gzip and sync
-    os.system('gzip --force {0}-???mas*fits'.format(key))
-    os.system('aws s3 sync --exclude "*" --include "{0}-???mas*gz" ./ s3://grizli-v1/Mosaics/ --acl public-read'.format(key))
+    if sync:
+        os.system('gzip --force {0}-???mas*fits'.format(key))
+        os.system('aws s3 sync --exclude "*" --include "{0}-???mas*gz" ./ s3://grizli-v1/Mosaics/ --acl public-read'.format(key))
 
 def full_processing():
     """
@@ -643,21 +644,24 @@ def full_processing():
     from grizli_aws import field_tiles
     
     key='egs'
+    
     os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key))
     
     fields = field_tiles.tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6)
     tiles = field_tiles.define_tiles(**fields[key])
     
     # Original drizzle
-    field_tiles.make_candels_tiles(key='gdn', filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', clean_intermediate=False)
+    field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', clean_intermediate=False)
         
     # Combined band images
-    field_tiles.combine_tile_filters(key='egs', skip_existing=True)
+    field_tiles.combine_tile_filters(key=key, skip_existing=True)
     
     # Tile mosaics
-    field_tiles.combine_tile_mosaics(key='egs', filts=field_tiles.IR_FILTERS, use_ref='wfc3ir', extensions = ['sci','wht'])
-    field_tiles.combine_tile_mosaics(key='egs', filts=field_tiles.OPTICAL_FILTERS, use_ref='wfc3ir', extensions = ['sci','wht'])
-    field_tiles.combine_tile_mosaics(key='egs', filts=['ir'], use_ref='wfc3ir', extensions = ['sci','wht'])
+    use_ref='wfc3ir'
+    field_tiles.combine_tile_mosaics(key=key, filts=field_tiles.IR_FILTERS, use_ref=use_ref, extensions = ['sci','wht'])
+    field_tiles.combine_tile_mosaics(key=key, filts=field_tiles.OPTICAL_FILTERS, use_ref=use_ref, extensions = ['sci','wht'])
+    field_tiles.combine_tile_mosaics(key=key, filts=['ir'], use_ref=use_ref, extensions = ['sci','wht'])
+    field_tiles.combine_tile_mosaics(key=key, filts=['opt'], use_ref=use_ref, extensions = ['sci','wht'])
     
     # Full Catalog
     from grizli.pipeline import auto_script
@@ -978,6 +982,5 @@ def grism_model():
     auto_script.extract(field_root=root, maglim=[13, 24], prior=None, MW_EBV=0.019, ids=ids, pline=pline, fit_only_beams=True, run_fit=False, poly_order=7, oned_R=30, master_files=None, grp=grp, bad_pa_threshold=None, fit_trace_shift=False, size=32, diff=True, min_sens=0.01, fcontam=0.2, min_mask=0.01, sys_err=0.03, skip_complete=True, args_file='fit_args.npy', get_only_beams=False)
     fitting.run_all_parallel(ids[0], verbose=True) 
     
-    
-            
+
             

@@ -166,6 +166,7 @@ def go():
     
     ## Fields with catalogs
     visit_files = glob.glob('j*/Prep/*f814w*visits.npy')
+    visit_files.sort()
     
     ## Mosaic now that they're aligned
     
@@ -278,7 +279,7 @@ def go():
 
     np.save('{0}_visits.npy'.format(out_root), [all_visits, all_groups, all_info])
     
-    if False:
+    if True:
         os.system('aws s3 cp {0}_visits.npy s3://grizli-v1/Mosaics/ --acl public-read'.format(out_root))
         
     all_visits, all_groups, all_info = np.load('{0}_visits.npy'.format(out_root))

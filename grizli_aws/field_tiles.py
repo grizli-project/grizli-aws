@@ -502,7 +502,7 @@ def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILT
             label = [int(i) for i in ref['NUMBER']]
             prep.table_to_regions(ref, out_root+'.reg', comment=label)
                   
-def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all', extensions = ['sci','wht']):
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht']):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -527,7 +527,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all', extens
         # acs
         files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*050mas*-*sci.fits.gz')
     else:
-        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*-*sci.fits.gz')
+        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]-{0}sci.fits.gz'.format(use_ref))
 
     files.sort()
 
@@ -599,13 +599,17 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all', extens
             for i, file in enumerate(files):
                 x0 = (xp[i]-left)*(sh[1]-olap)
                 y0 = (yp[i]-bot)*(sh[0]-olap)
+                                    
                 slx = slice(x0,x0+sh[1])
                 sly = slice(y0,y0+sh[0])
 
                 file_ext = file.replace('drz_sci', out_ext)    
                 file_ext = file_ext.replace('drc_sci', out_ext.replace('drz','drc'))    
 
-                if (slx.stop > data_sh[1]) | (sly.stop > data_sh[0]):
+                if (x0 < 0) | (y0 < 0):
+                    print('skip', file_ext)
+                    continue
+                elif (slx.stop > data_sh[1]) | (sly.stop > data_sh[0]):
                     print('skip', file_ext)
                     continue
                 else:
@@ -626,6 +630,53 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='all', extens
     # Gzip and sync
     os.system('gzip --force {0}-???mas*fits'.format(key))
     os.system('aws s3 sync --exclude "*" --include "{0}-???mas*gz" ./ s3://grizli-v1/Mosaics/ --acl public-read'.format(key))
+
+def full_processing():
+    """
+    Make mosaics and full-field catalogs
+    """
+    
+    import os
+    import glob
+    
+    import numpy as np
+    from grizli_aws import field_tiles
+    
+    key='egs'
+    os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key))
+    
+    fields = field_tiles.tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6)
+    tiles = field_tiles.define_tiles(**fields[key])
+    
+    # Original drizzle
+    field_tiles.make_candels_tiles(key='gdn', filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', clean_intermediate=False)
+        
+    # Combined band images
+    field_tiles.combine_tile_filters(key='egs', skip_existing=True)
+    
+    # Tile mosaics
+    field_tiles.combine_tile_mosaics(key='egs', filts=field_tiles.IR_FILTERS, use_ref='wfc3ir', extensions = ['sci','wht'])
+    field_tiles.combine_tile_mosaics(key='egs', filts=field_tiles.OPTICAL_FILTERS, use_ref='wfc3ir', extensions = ['sci','wht'])
+    field_tiles.combine_tile_mosaics(key='egs', filts=['ir'], use_ref='wfc3ir', extensions = ['sci','wht'])
+    
+    # Full Catalog
+    from grizli.pipeline import auto_script
+    kwargs = auto_script.get_yml_parameters()
+    
+    kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-ir'
+    kwargs['multiband_catalog_args']['field_root'] = key+'-???mas'
+    kwargs['multiband_catalog_args']['output_root'] = key+'-mosaic'
+
+    kwargs['multiband_catalog_args']['rescale_weight'] = False
+    kwargs['multiband_catalog_args']['det_err_scale'] = 1.
+
+    kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w'][::-1]
+    auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
+
+    os.system('aws s3 sync ./ s3://grizli-v1/Mosaics/ --exclude "*" --include "*mosaic*" --include "*ir.cat.fits"')
+    
+    os.system('gzip *ir_seg.fits') # *bkg.fits')
+    os.system('aws s3 sync ./ s3://grizli-v1/Mosaics/ --exclude "*" --include "*bkg.fits.gz" --include "*-ir_seg.fits.gz"')
     
 def grism_prep():
     
@@ -647,12 +698,23 @@ def grism_prep():
         kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w'][::-1]
         auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
 
-        kwargs['multiband_catalog_args']['detection_root'] = 'gds-100mas-ir'
-        kwargs['multiband_catalog_args']['field_root'] = 'gds-???mas'
-        kwargs['multiband_catalog_args']['output_root'] = 'gds-mosaic'
+        # Full-field multiband catalog
+        key = 'gds'
+        
+        kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-ir'
+        kwargs['multiband_catalog_args']['field_root'] = key+'-???mas'
+        kwargs['multiband_catalog_args']['output_root'] = key+'-mosaic'
+
+        kwargs['multiband_catalog_args']['rescale_weight'] = False
+        kwargs['multiband_catalog_args']['det_err_scale'] = 1.
+
         kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w'][::-1]
         auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
+
+        os.system('aws s3 sync ./ s3://grizli-v1/Mosaics/ --exclude "*" --include "*mosaic*" --include "*ir.cat.fits"')
         
+        os.system('gzip *ir_seg.fits') # *bkg.fits')
+        os.system('aws s3 sync ./ s3://grizli-v1/Mosaics/ --exclude "*" --include "*bkg.fits.gz" --include "*-ir_seg.fits.gz"')
         
     if key == 'uds':
         field_root = root = 'uds-grism-j021732m0512'

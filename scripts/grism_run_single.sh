@@ -26,7 +26,7 @@ if [ -n "${xxx}" ]; then
     root=j022204m0412
     BUCKET=grizli
     ids=235
-    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,9
+    fit_redshift_lambda.py ${root} --bucket_name=${BUCKET} --newfunc=False --skip_existing=True --sleep=True --ids=${ids} --zr=0.1,7.1
 
     BUCKET=grizli
     zr=0.1,12

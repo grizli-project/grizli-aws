@@ -283,8 +283,8 @@ if [ $nbeams -gt 0 ]; then
     #BUCKET=grizli
     grizli_extract_and_fit.py ${root} summary
     
-    aws s3 sync --exclude "*" --include "${root}*fits" ./ s3://${BUCKET}/Pipeline/${root}/Extractions/ --acl public-read
-    aws s3 sync --exclude "*" --include "${root}*png" --include "${root}*reg" --include "*html" --include "*json" --acl public-read ./ s3://${BUCKET}/Pipeline/${root}/Extractions/
+    aws s3 sync --exclude "*" --include "${root}*info.fits" ./ s3://${BUCKET}/Pipeline/${root}/Extractions/ --acl public-read
+    aws s3 sync --exclude "*" --include "${root}*png" --include "${root}*reg" --include "${root}*html" --include "${root}*json" --acl public-read ./ s3://${BUCKET}/Pipeline/${root}/Extractions/
     
     # aws s3 sync --exclude "*" --include "${root}*full.fits" --include "*cat.fits" --include "*phot.fits" --include "${root}*info.fits" --acl public-read s3://${BUCKET}/Pipeline/${root}/Extractions/ ./;  grizli_extract_and_fit.py ${root} summary ;  aws s3 sync --exclude "*" --include "${root}*fits" ./ s3://${BUCKET}/Pipeline/${root}/Extractions/ --acl public-read ; aws s3 sync --exclude "*" --include "${root}*png" --include "${root}*reg" --include "*html" --include "*json" --acl public-read ./ s3://${BUCKET}/Pipeline/${root}/Extractions/
     

@@ -3,7 +3,7 @@ aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" 
 ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 | awk '{print $1}' `
 
 ### c5 instances
-ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 |  grep c5 | awk '{print $1}' `
+ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 |  grep c5d.x | awk '{print $1}' `
 echo `echo $ids | wc -w` "c5 instances"
 
 ### Drizzler
@@ -47,10 +47,10 @@ halt=",\"halt\""
 # Halt if all done
 #halt=",\"hasfiles=`ls /GrizliImaging/ | grep log`; if [ -z \$hasfiles ]; then halt; fi\""
 
-for id in $ids; do
-    # Halt if done
-    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[\"refresh_repositories; halt_if_grizli_done\"],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
-done
+# for id in $ids; do
+#     # Halt if done
+#     aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[\"refresh_repositories; halt_if_grizli_done\"],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+# done
 
 for id in $ids; do     
     echo $id
@@ -60,9 +60,23 @@ for id in $ids; do
     ########### Run pipeline on each sub-field
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_preprocess","halt"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
     
+    ################################################################
+    
     ########### new preprocessing for CANDELS fields
-    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
-        
+    # aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+
+    ########### new preprocessing for CANDELS blue filters
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=f435w,f275w,f336w --mosaic_args.optical_filters=f435w,f275w,f336w --visit_prep_args.max_err_percentile=95 --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    
+    ## --visit_prep_args.reference_catalogs=PS1,DES,DSC,SDSS,GAIA,WISE
+    ## --visit_prep_args.align_mag_limits=20,23
+    ## --is_parallel_field=True --parse_visits_args.combine_same_pa=1 --parse_visits_args.max_dt=0.3 --preprocess_args.skip_single_optical_visits=True
+    
+    ########### new preprocessing for CHARGE fields
+    #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --run_fine_alignment=True --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    
+    #################################################################
+    
     ############# Run grism preprep
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_grism\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     

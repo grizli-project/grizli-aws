@@ -658,7 +658,7 @@ def full_processing():
     key='egs'
     
     os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key))
-    
+        
     fields = field_tiles.tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6)
     tiles = field_tiles.define_tiles(**fields[key])
     
@@ -1382,5 +1382,76 @@ def finkelstein():
         events = fit_redshift_lambda.fit_lambda(root=root, ids=ids, bucket_name='grizli-v1', show_event=2, zr=[6,8.5], skip_started=False, scale_photometry=False, use_phot_obj=False, verbose=True, run_fit='False', clean=False)
         for event in events:
             lambda_handler.redshift_handler(event, {})
+
+def highz_matches():
+         
+    ### Matches in high-z catalogs
+    import numpy as np
+    import numpy as np
+    key = 'gdn'
+    
+    if key == 'uds':
+        field_root = root = 'uds-grism-j021732m0512'
+        ref_filt = 'f814w'
+    elif key == 'egs':
+        field_root = root = 'egs-grism-j141956p5255'
+        ref_filt = 'f814w'
+    elif key == 'gds':
+        field_root = root = 'gds-grism-j033236m2748'
+        ref_filt = 'f850lp'
+    elif key == 'gdn':
+        field_root = root = 'gdn-grism-j123656p6215'
+    
+    phot = utils.read_catalog(key+'-mosaic_phot_apcorr.grism.fits')
+    
+    newcols = []
+    hasmat = phot['id']*0
+    
+    for f in [('finkelstein_2015.fits','f15',['zphot','_1500Mag']),
+              ('bouwens2015.fits', 'b15', ['zset', 'zphot', 'F160W']),
+              ('harikane_2016.fits', 'h16', ['ID'])]:
+                  
+        ext = utils.read_catalog('3DHST_Catalogs/'+f[0])
+        #idx, dr = phot.match_to_catalog_sky(ext, other_radec=['_RAJ2000', '_DEJ2000']) 
+
+        idx, dr = ext.match_to_catalog_sky(phot, ['_RAJ2000', '_DEJ2000']) 
+        mat = dr.value < 0.4
+        hasmat += mat*1
+        
+        phot['dr_'+f[1]] = dr.value
+        phot['dr_'+f[1]].format = '.2f'
+        
+        newcols += ['dr_'+f[1]]
+        for c in f[2]:
+            print(f[1], c)
+            newcol = '{0}_{1}'.format(f[1], c)
+            newcols.append(newcol)
             
+            phot[newcol] = np.ma.array(ext[c][idx], mask=~mat).filled()
+    
+    phot['ra'].format = phot['dec'].format = '.5f'
+    phot['mag_auto'].format = phot['flux_radius'].format = '.2f'
+    
+    full_cols = ['id', 'ra', 'dec', 'mag_auto', 'flux_radius', 'has_acs_grism', 'has_wfc3_grism']+newcols
+    filter_columns = full_cols[3:]
+    
+    # PNGs
+    png_ext = 'stack'
+    for g in ['g800l', 'figs', 'grism']:
+        if g == 'figs':
+            stack_list = ['stack', 'R30']
+        else:
+            stack_list = ['stack', 'full']
+        
+        for png_ext in stack_list:
+            png = ['https://s3.amazonaws.com/grizli-v1/Pipeline/{0}/Extractions/{0}_{1:05d}.{2}.png'.format(field_root.replace('grism', g), id, png_ext) for id in phot['id']]
+            png_col = '{0}_{1}'.format(g, png_ext)
+            phot[png_col] = ['<a href="{0}"><img src="{0}" height=220px></a>'.format(p) for p in png]
+            full_cols += [png_col]
+        
+    phot[full_cols][hasmat > 0].write_sortable_html('{0}-highz.html'.format(key),
+                 replace_braces=True, localhost=False, 
+                 max_lines=len(phot)+10, table_id=None, 
+                 table_class='display compact', css=None, 
+                 filter_columns=filter_columns, use_json=True)
     

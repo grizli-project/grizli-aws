@@ -278,7 +278,7 @@ def auto_run(root='j023507-040202', args=[]):
             radec = 'egs_prelim_hst.radec'
         elif 'j123656p6215' in root:
             radec = 'goodsn_prelim_hst.radec'
-        elif ('j001352m3023' in root) | ('j001420m3024' in root):
+        elif ('xxxj001352m3023' in root) | ('xxxj001420m3024' in root):
             radec = 'gaia_subaru_corr_abell2744.radec'
         else:
             radec = None

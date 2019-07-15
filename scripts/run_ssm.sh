@@ -72,6 +72,12 @@ for id in $ids; do
     ## --visit_prep_args.align_mag_limits=20,23
     ## --is_parallel_field=True --parse_visits_args.combine_same_pa=1 --parse_visits_args.max_dt=0.3 --preprocess_args.skip_single_optical_visits=True
     
+    ### Frontier fields
+    # gunzip ${root}/Prep/${root}*gz ${root}/Extractions/${root}*gz
+    # grism_run_single.sh ${root} --run_fine_alignment=True --bucket=grizli-v1 --filters=F814W --is_parallel_field=False --noclean
+    
+    # grism_run_single.sh ${root} --run_fine_alignment=True --bucket=grizli-v1 --extra_filters=f435w,f475w,g800l --is_parallel_field=False --noclean
+    
     ########### new preprocessing for CHARGE fields
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --run_fine_alignment=True --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     

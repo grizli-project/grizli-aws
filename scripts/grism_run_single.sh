@@ -163,6 +163,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     done
     
     # Make fake copies of flt-raw files
+    echo "Copy FLT/RAW"
     cd ${root}/Prep/
     files=`ls *_flt.fits`
     cd ../RAW/
@@ -175,13 +176,23 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
         fi
         
         if [ ! -e "${file}" ]; then 
-            cp ../Prep/${file} .
+            ln -s ../Prep/${file} .
         fi
         
     done
     
     echo "Copy FLC"
-    cp ../Prep/*flc.fits ../RAW/
+    cd ../Prep/
+    files=`ls *_flt.fits`
+    cd ../RAW/
+    for file in $files; do 
+        echo $file $out
+        if [ ! -e "${file}" ]; then 
+            echo $file $out        
+            ln -s ../Prep/${file} .
+        fi        
+    done
+    
     
     # Back to root
     cd ../../

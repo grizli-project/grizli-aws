@@ -103,7 +103,7 @@ def auto_run(root='j023507-040202', args=[]):
     # }
       
     tab = utils.GTable.gread('{0}_footprint.fits'.format(root))
-    
+            
     #IS_PARALLEL = utils.column_string_operation(tab['proposal_pi'], ['Malkan', 'Trenti'], method='count', logical='or').sum() > 0
 
     IS_PARALLEL = (tab['target'] == 'ANY').sum() > 0
@@ -228,7 +228,10 @@ def auto_run(root='j023507-040202', args=[]):
                         d[p] = val
                     else:
                         if isinstance(d[p], bool):
-                            d[p] = val.lower() == 'true'
+                            if isinstance(val, int):
+                                d[p] = val
+                            else:
+                                d[p] = val.lower() == 'true'
                         else:
                             try:
                                 d[p] = d[p].__class__(val)

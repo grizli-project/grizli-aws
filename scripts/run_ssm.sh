@@ -69,7 +69,7 @@ for id in $ids; do
     aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=f435w,f275w,f336w --mosaic_args.optical_filters=f435w,f275w,f336w --visit_prep_args.max_err_percentile=95 --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     
     ### Redo mosaics with fixed persistence and mask_spikes
-    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --sync --run_fine_alignment=False --bucket=grizli-v1 --run_parse_visits=False --preprocess_args.skip_single_optical_visits=True --extra_filters=g800l --redo_persistence_mask=True --mask_spikes=True\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --run_fine_alignment=2 --bucket=grizli-v1 --run_parse_visits=False --preprocess_args.skip_single_optical_visits=True --extra_filters=g800l --redo_persistence_mask=True --mask_spikes=True --sync\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     
     ## --visit_prep_args.reference_catalogs=PS1,DES,DSC,SDSS,GAIA,WISE
     ## --visit_prep_args.align_mag_limits=20,23

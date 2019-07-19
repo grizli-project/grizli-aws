@@ -183,7 +183,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     
     echo "Copy FLC"
     cd ../Prep/
-    files=`ls *_flt.fits`
+    files=`ls *_flc.fits`
     cd ../RAW/
     for file in $files; do 
         echo $file $out

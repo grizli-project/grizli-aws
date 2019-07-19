@@ -228,8 +228,8 @@ def auto_run(root='j023507-040202', args=[]):
                         d[p] = val
                     else:
                         if isinstance(d[p], bool):
-                            if isinstance(val, int):
-                                d[p] = val
+                            if val.isdigit():
+                                d[p] = int(val)
                             else:
                                 d[p] = val.lower() == 'true'
                         else:

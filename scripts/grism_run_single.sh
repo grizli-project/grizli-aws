@@ -186,9 +186,8 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     files=`ls *_flc.fits`
     cd ../RAW/
     for file in $files; do 
-        echo $file $out
         if [ ! -e "${file}" ]; then 
-            echo $file $out        
+            echo $file
             ln -s ../Prep/${file} .
         fi        
     done

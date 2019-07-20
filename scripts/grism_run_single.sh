@@ -135,10 +135,12 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     if [ $is_sync -gt 0 ]; then 
         rm ./${root}/Prep/${root}_phot.fits
         rm ./${root}/Prep/${root}-ir*
+        rm ./${root}/Prep/${root}-opt*
+        rm ./${root}/Prep/${root}-*_dr*fits*
         rm ./${root}/Prep/${root}-*psf*
         rm ./${root}/Extractions/*
         
-        aws s3 rm --recursive --exclude "*" --include "Prep/${root}_phot.fits" --include "Prep/${root}-ir*" --include "Prep/${root}-*psf*" --include "Extractions/*" s3://${BUCKET}/Pipeline/${root}        
+        aws s3 rm --recursive --exclude "*" --include "Prep/${root}_phot.fits" --include "Prep/${root}-ir*" --include "Prep/${root}-opt*" --include "Prep/${root}-*_dr*fits*" --include "Prep/${root}-*psf*" --include "Extractions/*" s3://${BUCKET}/Pipeline/${root}        
     fi 
     
     # Unzip zipped mosaics

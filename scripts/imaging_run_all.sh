@@ -10,7 +10,7 @@ for arg in "$@" ; do
     fi
 done
 
-roots=`aws s3 ls s3://${BUCKET}/Pipeline/Fields/ | grep footprint.fits | awk '{print $4}' | sed "s/_footprint.fits//"`
+roots=`aws s3 ls s3://${BUCKET}/Pipeline/Fields/ | grep footprint.fits | awk '{print $4}' | sed "s/_footprint.fits//" | shuf`
 
 # Existing
 aws s3 ls s3://${BUCKET}/Pipeline/Log/Start/ > /tmp/grizli_started.log

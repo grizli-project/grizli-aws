@@ -522,7 +522,7 @@ def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILT
             label = [int(i) for i in ref['NUMBER']]
             prep.table_to_regions(ref, out_root+'.reg', comment=label)
                   
-def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], sync=True):
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], sync=True, bucket='grizli-v1'):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -650,7 +650,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
     # Gzip and sync
     if sync:
         os.system('gzip --force {0}-???mas*fits'.format(key))
-        os.system('aws s3 sync --exclude "*" --include "{0}-???mas*gz" ./ s3://grizli-v1/Mosaics/ --acl public-read'.format(key))
+        os.system('aws s3 sync --exclude "*" --include "{0}-???mas*gz" ./ s3://{1}/Mosaics/ --acl public-read'.format(key, bucket))
 
 def full_processing():
     """
@@ -665,7 +665,10 @@ def full_processing():
     
     key='egs'
     
-    os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key))
+    bucket='grizli-v1'
+    key='cos'; bucket='grizli-cosmos-v2'
+    
+    os.system('aws s3 sync s3://{1}/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key, bucket))
     if False:
         os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*f814*sci.fits.gz" --include "{0}*wcs.*"'.format(key))
         os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*f435*.fits.gz" --include "{0}*wcs.*"'.format(key))
@@ -676,10 +679,19 @@ def full_processing():
     
     # Original drizzle
     field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', bucket='grizli-v1', clean_intermediate=False)
+
+    field_tiles.make_candels_tiles(key=key, filts=['f814w'], pixfrac=0.33, output_bucket='s3://grizli-cosmos-v2/Mosaics/', bucket='grizli-cosmos-v2', clean_intermediate=False)
         
     # Combined band images
     field_tiles.combine_tile_filters(key=key, skip_existing=True)
     
+    if False:
+        os.system('aws s3 sync s3://{1}/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key, bucket))
+        field_tiles.combine_tile_filters(key=key, skip_existing=False)
+        
+        use_ref = '*'
+        field_tiles.combine_tile_mosaics(key=key, filts=field_tiles.IR_FILTERS, use_ref=use_ref, extensions = ['sci','wht'])
+        
     # Tile mosaics
     use_ref='wfc3ir'
     field_tiles.combine_tile_mosaics(key=key, filts=field_tiles.IR_FILTERS, use_ref=use_ref, extensions = ['sci','wht'])

@@ -94,7 +94,7 @@ def define_tiles(ra=109.3935148, dec=37.74934031, size=(24, 24), tile_size=6, ov
     return tile_wcs
     
 ####
-def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f105w','f814w','f098m','f606w','f475w','f850lp'], pixfrac=0.5, output_bucket=None, clean_intermediate=False):   
+def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f105w','f814w','f098m','f606w','f475w','f850lp'], pixfrac=0.5, output_bucket=None, clean_intermediate=False, use_keys=None):   
     """
     mkdir ~/CosmosMosaic
     cd ~/CosmosMosaic
@@ -114,7 +114,10 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
     import astropy.io.fits as pyfits
     import astropy.wcs as pwcs
     from grizli import utils, prep
-                
+      
+    if use_keys is None:
+        use_keys = list(tiles.keys())
+                  
     # By filter
     groups = {}
     for visit in visits:
@@ -129,6 +132,9 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
             groups[filt][l].extend(visit[l])
                     
     for t in list(tiles.keys()):
+        if t not in use_keys:
+            continue
+        
         tile = tiles[t]
         
         try:

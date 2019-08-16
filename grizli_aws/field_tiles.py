@@ -286,7 +286,7 @@ def drizzle_tiles(visits, tiles, prefix='gdn', filts=['f160w','f140w','f125w','f
                 print('rm '+file)
                 os.remove(file)
         
-def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', clean_intermediate=False):
+def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, bucket='grizli-v1', output_bucket='s3://grizli-v1/Mosaics/', clean_intermediate=False):
     
     import numpy as np
     import matplotlib.pyplot as plt
@@ -335,22 +335,23 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, output_bu
     
     visit_file = glob.glob('{0}-j*visits.npy'.format(key))
     if len(visit_file) == 0:
-        os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}*npy"'.format(key))
+        os.system('aws s3 sync s3://{0}/Mosaics/ ./ --exclude "*" --include "{1}*npy"'.format(bucket, key))
         visit_file = glob.glob('{0}-j*visits.npy'.format(key))
     
     all_visits, all_groups, info = np.load(visit_file[0])
     
     # Replace aws path for IR
-    for v in all_visits:
-        if '_flt' in v['files'][0]:
-            v['awspath'] = []
-            for file in v['files']:
-                file_root = os.path.basename(file)
-                prog = file_root[:4]
-                dataset = file_root[:9]
+    if bucket == 'grizli-v1':
+        for v in all_visits:
+            if '_flt' in v['files'][0]:
+                v['awspath'] = []
+                for file in v['files']:
+                    file_root = os.path.basename(file)
+                    prog = file_root[:4]
+                    dataset = file_root[:9]
 
-                aws = os.path.join('grizli-v1', 'Exposures', prog, dataset)
-                v['awspath'].append(aws)
+                    aws = os.path.join('grizli-v1', 'Exposures', prog, dataset)
+                    v['awspath'].append(aws)
             
     if False:
         # test single tile
@@ -674,7 +675,7 @@ def full_processing():
     tiles = field_tiles.define_tiles(**fields[key])
     
     # Original drizzle
-    field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', clean_intermediate=False)
+    field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', bucket='grizli-v1' clean_intermediate=False)
         
     # Combined band images
     field_tiles.combine_tile_filters(key=key, skip_existing=True)

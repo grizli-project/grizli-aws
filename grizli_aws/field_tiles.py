@@ -525,7 +525,7 @@ def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILT
             label = [int(i) for i in ref['NUMBER']]
             prep.table_to_regions(ref, out_root+'.reg', comment=label)
                   
-def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], sync=True, bucket='grizli-v1'):
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], sync=True, bucket='grizli-v1', use_files=None):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -549,6 +549,8 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
     elif use_ref == 'acswfc':
         # acs
         files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*050mas*-*sci.fits.gz')
+    elif use_files is not None:
+        files = use_files
     else:
         files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]-{0}sci.fits.gz'.format(use_ref))
 

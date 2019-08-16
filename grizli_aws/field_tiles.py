@@ -37,6 +37,7 @@ def tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6):
     fields['uds'] = {'field':'uds', 'ra':34.361, 'dec':-5.163, 'size':(36,24), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
     fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234, 'size':(54, 60), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
     fields['gds'] = {'field':'gds', 'ra':53.1180-0.5/60, 'dec':-27.8216-0.5/60, 'size':(32, 32), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
+    fields['cos'] = {'field':'gds', 'ra':150.125, 'dec':2.25, 'size':(90, 90), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
     
     # Rotated EGS along strip
     size=(80,20)
@@ -658,6 +659,10 @@ def full_processing():
     key='egs'
     
     os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key))
+    if False:
+        os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*f814*sci.fits.gz" --include "{0}*wcs.*"'.format(key))
+        os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*f435*.fits.gz" --include "{0}*wcs.*"'.format(key))
+        
         
     fields = field_tiles.tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6)
     tiles = field_tiles.define_tiles(**fields[key])

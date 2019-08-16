@@ -27,6 +27,8 @@ def go():
     
     root = 'j033236m2748'
     
+    root = 'j100012p0210'
+    
     # Sync needed files for GOODSN
     if root == 'j123656p6215':
         # os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*cat.fits" --include "{0}*/Prep/{0}_*dr*fits.gz" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" s3://grizli/Pipeline/ .'.format(root))
@@ -274,6 +276,8 @@ def go():
         out_root = 'egs-'+root
     elif root == 'j033236m2748':
         out_root = 'gds-'+root
+    elif root == 'j100012p0210':
+        out_root = 'cos-'+root
     else:
         out_root = 'xxx-'+root
 

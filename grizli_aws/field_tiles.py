@@ -675,7 +675,7 @@ def full_processing():
     tiles = field_tiles.define_tiles(**fields[key])
     
     # Original drizzle
-    field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', bucket='grizli-v1' clean_intermediate=False)
+    field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', bucket='grizli-v1', clean_intermediate=False)
         
     # Combined band images
     field_tiles.combine_tile_filters(key=key, skip_existing=True)

@@ -362,7 +362,7 @@ def make_candels_tiles(key='gdn', filts=OPTICAL_FILTERS, pixfrac=0.33, bucket='g
     
     drizzle_tiles(all_visits, tiles, filts=filts, prefix=key, pixfrac=pixfrac, output_bucket=output_bucket, clean_intermediate=clean_intermediate)
 
-def combine_tile_filters(key='egs', skip_existing=True, combine_fnu=True):
+def combine_tile_filters(key='egs', skip_existing=True, combine_fnu=True, bands=['ir', 'opt']):
     """
     Make combined images weighted by photflam
     """
@@ -413,7 +413,10 @@ def combine_tile_filters(key='egs', skip_existing=True, combine_fnu=True):
                 band = 'ir'
             else:
                 band = 'opt'
-                
+            
+            if band not in bands:
+                continue
+                    
             print(sci_file, band)
             output_sci[band] = sci_file.replace(filt_i, band)
             
@@ -680,7 +683,7 @@ def full_processing():
     # Original drizzle
     field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', bucket='grizli-v1', clean_intermediate=False)
 
-    field_tiles.make_candels_tiles(key=key, filts=['f814w'], pixfrac=0.33, output_bucket='s3://grizli-cosmos-v2/Mosaics/', bucket='grizli-cosmos-v2', clean_intermediate=False)
+    field_tiles.make_candels_tiles(key=key, filts=['f140w'], pixfrac=0.33, output_bucket='s3://grizli-cosmos-v2/Mosaics/', bucket='grizli-cosmos-v2', clean_intermediate=False)
         
     # Combined band images
     field_tiles.combine_tile_filters(key=key, skip_existing=True)
@@ -690,7 +693,8 @@ def full_processing():
         field_tiles.combine_tile_filters(key=key, skip_existing=False)
         
         use_ref = '*'
-        field_tiles.combine_tile_mosaics(key=key, filts=field_tiles.IR_FILTERS, use_ref=use_ref, extensions = ['sci','wht'])
+        filts = field_tiles.IR_FILTERS
+        field_tiles.combine_tile_mosaics(key=key, filts=filts, use_ref=use_ref, extensions = ['sci','wht'], sync=True, bucket='grizli-cosmos-v2')
         
     # Tile mosaics
     use_ref='wfc3ir'
@@ -704,6 +708,7 @@ def full_processing():
     kwargs = auto_script.get_yml_parameters()
     
     kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-ir'
+    kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-f105w'
     kwargs['multiband_catalog_args']['field_root'] = key+'-???mas'
     kwargs['multiband_catalog_args']['output_root'] = key+'-mosaic'
 

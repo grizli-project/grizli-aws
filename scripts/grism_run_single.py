@@ -204,8 +204,9 @@ def auto_run(root='j023507-040202', args=[]):
                     p = pspl
                                     
                 if valid:
-                    if val is 'None':
+                    if val.strip() in ['None', 'null']:
                         d[p] = None
+                        print('Runtime argument: {0} = {1}/[None]'.format(p, val))
                     elif isinstance(d[p], list):
                         lval = val.replace('[','').replace(']','').split(',')
                         

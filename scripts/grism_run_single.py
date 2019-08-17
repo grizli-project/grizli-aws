@@ -204,7 +204,9 @@ def auto_run(root='j023507-040202', args=[]):
                     p = pspl
                                     
                 if valid:
-                    if isinstance(d[p], list):
+                    if val is 'None':
+                        d[p] = None
+                    elif isinstance(d[p], list):
                         lval = val.replace('[','').replace(']','').split(',')
                         
                         # Item shoud be a list

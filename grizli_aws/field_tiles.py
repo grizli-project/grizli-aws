@@ -37,7 +37,7 @@ def tile_parameters(pixscale=0.05, overlap=0.3, tile_size=6):
     fields['uds'] = {'field':'uds', 'ra':34.361, 'dec':-5.163, 'size':(36,24), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
     fields['egs'] = {'field':'egs', 'ra':214.8288, 'dec':52.8234, 'size':(54, 60), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
     fields['gds'] = {'field':'gds', 'ra':53.1180-0.5/60, 'dec':-27.8216-0.5/60, 'size':(32, 32), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
-    fields['cos'] = {'field':'cos', 'ra':150.125, 'dec':2.25, 'size':(90, 90), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
+    fields['cos'] = {'field':'cos', 'ra':150.125-0.041, 'dec':2.25-0.018, 'size':(90, 90), 'tile_size':tile_size, 'overlap':overlap, 'pixscale':pixscale}
     
     # Rotated EGS along strip
     size=(80,20)
@@ -674,6 +674,7 @@ def full_processing():
     key='cos'; bucket='grizli-cosmos-v2'
     
     os.system('aws s3 sync s3://{1}/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key, bucket))
+    
     if False:
         os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*f814*sci.fits.gz" --include "{0}*wcs.*"'.format(key))
         os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*f435*.fits.gz" --include "{0}*wcs.*"'.format(key))
@@ -692,11 +693,25 @@ def full_processing():
     
     if False:
         os.system('aws s3 sync s3://{1}/Mosaics/ ./ --exclude "*" --include "{0}-??.??-*" --include "{0}*wcs.*"'.format(key, bucket))
+        
         field_tiles.combine_tile_filters(key=key, skip_existing=False)
+        field_tiles.combine_tile_filters(key=key, skip_existing=False, bands=['opt'])
         
         use_ref = '*'
         filts = field_tiles.IR_FILTERS
         field_tiles.combine_tile_mosaics(key=key, filts=filts, use_ref=use_ref, extensions = ['sci','wht'], sync=True, bucket='grizli-cosmos-v2')
+        
+        # Region around CANDELS
+        use_files = glob.glob('cos-07.07*sci.fits.gz')
+        use_files += glob.glob('cos-07.12*sci.fits.gz')
+        use_files += glob.glob('cos-10.07*sci.fits.gz')
+        use_files += glob.glob('cos-10.12*sci.fits.gz')
+        use_ref = '*'
+        
+        filts = field_tiles.IR_FILTERS
+        filts = ['f814w']
+        
+        field_tiles.combine_tile_mosaics(key=key, filts=filts, use_ref=use_ref, extensions = ['sci','wht'], sync=True, bucket='grizli-cosmos-v2', use_files=use_files)
         
     # Tile mosaics
     use_ref='wfc3ir'
@@ -710,20 +725,22 @@ def full_processing():
     kwargs = auto_script.get_yml_parameters()
     
     kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-ir'
-    kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-f105w'
+    #kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-f105w'
     kwargs['multiband_catalog_args']['field_root'] = key+'-???mas'
     kwargs['multiband_catalog_args']['output_root'] = key+'-mosaic'
 
     kwargs['multiband_catalog_args']['rescale_weight'] = False
     kwargs['multiband_catalog_args']['det_err_scale'] = 1.
 
-    kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w'][::-1]
+    kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w','f475w','f438w','f435w','f350lp'][::-1]
     auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
-
-    os.system('aws s3 sync ./ s3://grizli-v1/Mosaics/ --exclude "*" --include "*mosaic*" --include "*ir.cat.fits"')
+    
+    bucket='grizli-cosmos-v2'
+    
+    os.system('aws s3 sync ./ s3://{0}/Mosaics/ --exclude "*" --include "*mosaic*" --include "*ir.cat.fits" --acl "public-read"'.format(bucket))
     
     os.system('gzip *ir_seg.fits') # *bkg.fits')
-    os.system('aws s3 sync ./ s3://grizli-v1/Mosaics/ --exclude "*" --include "*bkg.fits.gz" --include "*-ir_seg.fits.gz"')
+    os.system('aws s3 sync ./ s3://{0}/Mosaics/ --exclude "*" --include "*bkg.fits.gz" --include "*-ir_seg.fits.gz" --acl "public-read"'.format(bucket))
     
 def g800l_prep():
     

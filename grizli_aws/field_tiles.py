@@ -577,7 +577,9 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
     #filts = ['f098m','f110w','f140w','f105w','f160w','f125w']
     for filt_i in filts:
     
-        files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-'+filt_i+'*sci.fits.gz')
+        files = glob.glob('*-[0-9][0-9].[0-9][0-9]*-{0:03d}mas-'.format(ref_pixscale)+filt_i+'*sci.fits.gz')
+        files += glob.glob('*-[0-9][0-9].[0-9][0-9]*-{0:03d}mas-'.format(ref_pixscale*2)+filt_i+'*sci.fits.gz')
+
         files.sort()
         if len(files) == 0:
             continue

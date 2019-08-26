@@ -649,7 +649,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
                 data[sly, slx] = sci_i[0].data
         
             mos = pyfits.PrimaryHDU(data=data, header=wh)
-            outfile = '{0}-{1:03d}mas-{2}_{3}.fits'.format(key, 100//(1+is_fine), filt_i.lower(), out_ext)
+            outfile = '{0}-{1:03d}mas-{2}_{3}.fits'.format(key, ref_pixscale*(2-is_fine), filt_i.lower(), out_ext)
             mos.writeto(outfile, overwrite=True)
         
             del(data)

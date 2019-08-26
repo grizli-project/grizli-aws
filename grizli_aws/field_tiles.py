@@ -525,7 +525,7 @@ def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILT
             label = [int(i) for i in ref['NUMBER']]
             prep.table_to_regions(ref, out_root+'.reg', comment=label)
                   
-def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], tiles=None, sync=True, bucket='grizli-v1', use_files=None):
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], tiles=None, sync=True, bucket='grizli-v1', use_files=None, ref_pixscale=50):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -545,10 +545,10 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
     
     if use_ref == 'wfc3ir':
         # wfc3/ir
-        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*100mas*-*sci.fits.gz')
+        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*{0}mas*-*sci.fits.gz'.format(ref_pixscale*2))
     elif use_ref == 'acswfc':
         # acs
-        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*050mas*-*sci.fits.gz')
+        files = glob.glob(key+'*-[0-9][0-9].[0-9][0-9]*{0}mas*-*sci.fits.gz'.format(ref_pixscale))
     elif use_files is not None:
         files = use_files
     else:
@@ -569,7 +569,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
     # WCS defined in lower left corner
     ll = '{0:02d}.{1:02d}'.format(left, bot)
     if tiles is None:
-        tiles = np.load('{0}_50mas_tile_wcs.npy'.format(key))[0]
+        tiles = np.load('{0}_{1}mas_tile_wcs.npy'.format(key, ref_pixscale))[0]
     
     wcs = tiles[ll]
 
@@ -590,7 +590,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
         sh = ref.data.shape
         the_filter = utils.get_hst_filter(ref.header)
     
-        is_fine = ('50mas' in files[0]) | ('30mas' in files[0])
+        is_fine = ('{0}mas'.format(ref_pixscale) in files[0])
         if is_fine:
             wh = wcs._header
         else:  
@@ -610,7 +610,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
                 wh[k] = ref.header[k]
     
         # Compute size of overlap in pixels (tiles generated with 0.3' overlap)
-        coarse_pix = 0.1
+        coarse_pix = 2*ref_pixscale/1000 #0.1
         overlap_arcmin = 0.3    
         olap = int(overlap_arcmin*60/coarse_pix*(1+is_fine))
     

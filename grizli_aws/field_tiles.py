@@ -556,7 +556,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
 
     files.sort()
 
-    tile_pos = np.array([int(file.split('-')[1].replace('.','')) for file in files])
+    tile_pos = np.array([int(file.split('-')[-3].replace('.','')) for file in files])
     xp = tile_pos // 100
     yp = tile_pos % 100
     
@@ -580,7 +580,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
         if len(files) == 0:
             continue
             
-        tile_pos = np.array([int(file.split('-')[1].replace('.','')) for file in files])
+        tile_pos = np.array([int(file.split('-')[-3].replace('.','')) for file in files])
         xp = tile_pos // 100
         yp = tile_pos % 100
         
@@ -686,7 +686,8 @@ def full_processing():
     # Original drizzle
     field_tiles.make_candels_tiles(key=key, filts=field_tiles.IR_FILTERS, pixfrac=0.33, output_bucket='s3://grizli-v1/Mosaics/', bucket='grizli-v1', clean_intermediate=False)
 
-    field_tiles.make_candels_tiles(key=key, filts=['f140w'], pixfrac=0.33, output_bucket='s3://grizli-cosmos-v2/Mosaics/', bucket='grizli-cosmos-v2', clean_intermediate=False)
+    field_tiles.make_candels_tiles(key=key, filts=['f606w'], pixfrac=0.33, output_bucket='s3://grizli-cosmos-v2/Mosaics/', bucket='grizli-cosmos-v2', clean_intermediate=True)
+    field_tiles.make_candels_tiles(key=key, filts=['f350lp', 'f438w', 'f435w', 'f475w', 'f850lp'], pixfrac=0.33, output_bucket='s3://grizli-cosmos-v2/Mosaics/', bucket='grizli-cosmos-v2', clean_intermediate=True)
         
     # Combined band images
     field_tiles.combine_tile_filters(key=key, skip_existing=True)
@@ -696,6 +697,16 @@ def full_processing():
         
         field_tiles.combine_tile_filters(key=key, skip_existing=False)
         field_tiles.combine_tile_filters(key=key, skip_existing=False, bands=['opt'])
+
+        field_tiles.combine_tile_filters(key=key, skip_existing=False, bands=['ir'])
+        os.system('aws s3 sync ./ s3://{1}/Mosaics/ --exclude "*" --include "{0}-??.??-100mas-ir*" --acl public-read'.format(key, bucket))
+
+        field_tiles.combine_tile_filters(key=key, skip_existing=False, bands=['opt'])
+        
+        field_tiles.make_all_tile_catalogs(key='cos', filts=['f350lp', 'f438w', 'f435w', 'f475w', 'f606w','f850lp']+field_tiles.IR_FILTERS)
+        field_tiles.make_all_tile_catalogs(key='cos', filts=['f814w'])
+        os.system('aws s3 sync ./ s3://{1}/Mosaics/ --exclude "*" --include "{0}*tiles.fits" --acl public-read'.format(key, bucket))
+        
         
         use_ref = '*'
         filts = field_tiles.IR_FILTERS
@@ -704,8 +715,8 @@ def full_processing():
         # Region around CANDELS
         use_files = glob.glob('cos-07.07*sci.fits.gz')
         use_files += glob.glob('cos-07.12*sci.fits.gz')
-        use_files += glob.glob('cos-10.07*sci.fits.gz')
-        use_files += glob.glob('cos-10.12*sci.fits.gz')
+        use_files += glob.glob('cos-09.07*sci.fits.gz')
+        use_files += glob.glob('cos-09.12*sci.fits.gz')
         use_ref = '*'
         
         filts = field_tiles.IR_FILTERS
@@ -724,23 +735,31 @@ def full_processing():
     from grizli.pipeline import auto_script
     kwargs = auto_script.get_yml_parameters()
     
-    kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-ir'
-    #kwargs['multiband_catalog_args']['detection_root'] = key+'-100mas-f105w'
-    kwargs['multiband_catalog_args']['field_root'] = key+'-???mas'
-    kwargs['multiband_catalog_args']['output_root'] = key+'-mosaic'
+    keys = [key]
+    keys = ['cos-cnd']
+    
+    keys = [f.split('-100mas')[0] for f in glob.glob('*-??.??-100mas-ir*sci.fits.gz')]
+    keys.sort()
+    
+    for ckey in keys:
+        kwargs['multiband_catalog_args']['detection_root'] = ckey+'-100mas-ir'
+        #kwargs['multiband_catalog_args']['detection_root'] = ckey
+        kwargs['multiband_catalog_args']['field_root'] = ckey+'-???mas'
+        kwargs['multiband_catalog_args']['output_root'] = ckey+'-mosaic'
 
-    kwargs['multiband_catalog_args']['rescale_weight'] = False
-    kwargs['multiband_catalog_args']['det_err_scale'] = 1.
+        kwargs['multiband_catalog_args']['rescale_weight'] = False
+        kwargs['multiband_catalog_args']['det_err_scale'] = 1.
 
-    kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w','f475w','f438w','f435w','f350lp'][::-1]
-    auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
+        kwargs['multiband_catalog_args']['filters'] = ['f160w','f140w','f125w','f110w','f105w','f098m','f850lp','f814w','f775w','f606w','f475w','f438w','f435w','f350lp'][::-1]
+        auto_script.multiband_catalog(**kwargs['multiband_catalog_args'])
     
     bucket='grizli-cosmos-v2'
     
     os.system('aws s3 sync ./ s3://{0}/Mosaics/ --exclude "*" --include "*mosaic*" --include "*ir.cat.fits" --acl "public-read"'.format(bucket))
     
     os.system('gzip *ir_seg.fits') # *bkg.fits')
-    os.system('aws s3 sync ./ s3://{0}/Mosaics/ --exclude "*" --include "*bkg.fits.gz" --include "*-ir_seg.fits.gz" --acl "public-read"'.format(bucket))
+    #os.system('aws s3 sync ./ s3://{0}/Mosaics/ --exclude "*" --include "*bkg.fits.gz" --include "*-ir_seg.fits.gz" --acl "public-read"'.format(bucket))
+    os.system('aws s3 sync ./ s3://{0}/Mosaics/ --exclude "*" --include "*-ir_seg.fits.gz" --acl "public-read"'.format(bucket))
     
 def g800l_prep():
     
@@ -758,6 +777,7 @@ def g800l_prep():
     except:
         key='egs'
     
+    key0 = key
     if key == 'uds':
         field_root = root = 'uds-grism-j021732m0512'
         ref_filt = 'f814w'
@@ -770,19 +790,29 @@ def g800l_prep():
     elif key == 'gdn':
         field_root = root = 'gdn-grism-j123656p6215'
         ref_filt = 'f814w'
-    
+    elif key == 'cos':
+        field_root = root = 'cos-grism-j100012p0210'
+        ref_filt = 'f814w'
+        key0 = 'cos-cnd'
+        
     new_root = root.replace('-grism', '-g800l')
+    
+    bucket = 'grizli-v1'
+    if key == 'cos':
+        bucket = 'grizli-cosmos-v2'
+        
     
     if key == 'egs':
         os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "egs-0[6-9].0[2-4]*{0}*fits.gz" --include "egs*npy"'.format(ref_filt))
     else:
-        os.system('aws s3 sync s3://grizli-v1/Mosaics/ ./ --exclude "*" --include "{0}-050mas-{1}*fits.gz" --include "{0}*npy"'.format(key, ref_filt))
-        os.system('gunzip {0}-050mas-{1}*fits.gz'.format(key, ref_filt))
+        os.system('aws s3 sync s3://{2}/Mosaics/ ./ --exclude "*" --include "{0}-050mas-{1}*fits.gz" --include "{0}*npy"'.format(key0, ref_filt, bucket))
+        os.system('gunzip {0}-050mas-{1}*fits.gz'.format(key0, ref_filt))
     
-    os.system('aws s3 cp s3://grizli-v1/Pipeline/{0}/Extractions/{0}-ir.cat.fits ./'.format(field_root))
-    os.system('aws s3 cp s3://grizli-v1/Pipeline/{0}/Extractions/{0}_phot.fits ./'.format(field_root))
-    os.system('aws s3 cp s3://grizli-v1/Pipeline/{0}/Extractions/{0}-ir_seg.fits.gz ./'.format(field_root))
-    os.system('aws s3 cp s3://grizli-v1/Pipeline/{0}/Prep/{0}-ir_seg.fits.gz ./'.format(field_root))
+    
+    os.system('aws s3 cp s3://{1}/Pipeline/{0}/Extractions/{0}-ir.cat.fits ./'.format(field_root, bucket))
+    os.system('aws s3 cp s3://{1}/Pipeline/{0}/Extractions/{0}_phot.fits ./'.format(field_root, bucket))
+    os.system('aws s3 cp s3://{1}/Pipeline/{0}/Extractions/{0}-ir_seg.fits.gz ./'.format(field_root, bucket))
+    os.system('aws s3 cp s3://{1}/Pipeline/{0}/Prep/{0}-ir_seg.fits.gz ./'.format(field_root, bucket))
     os.system('gunzip *seg.fits.gz')
         
     # Tile mosaics
@@ -793,16 +823,21 @@ def g800l_prep():
         use_ref='*'
         field_tiles.combine_tile_mosaics(key=key, filts=field_tiles.OPTICAL_FILTERS, use_ref=use_ref, extensions = ['sci','wht'], sync=False)
     
-    os.system('cp {0}-050mas-{2}_drz_sci.fits {1}-{2}_drc_sci.fits'.format(key, new_root, ref_filt))
-    os.system('cp {0}-050mas-{2}_drz_wht.fits {1}-{2}_drc_wht.fits'.format(key, new_root, ref_filt))
+    os.system('cp {0}-050mas-{2}_drz_sci.fits {1}-{2}_drc_sci.fits'.format(key0, new_root, ref_filt))
+    os.system('cp {0}-050mas-{2}_drz_wht.fits {1}-{2}_drc_wht.fits'.format(key0, new_root, ref_filt))
 
-    os.system('cp {0}-050mas-{2}_drz_sci.fits {1}-ir_drc_sci.fits'.format(key, new_root, ref_filt))
-    os.system('cp {0}-050mas-{2}_drz_wht.fits {1}-ir_drc_wht.fits'.format(key, new_root, ref_filt))
-
-    os.system('cp {0}-ir_seg.fits {1}-ir_seg.fits'.format(root, new_root))
-    os.system('cp {0}-ir.cat.fits {1}-ir.cat.fits'.format(root, new_root))
-    os.system('cp {0}_phot.fits {1}_phot.fits'.format(root, new_root))
+    os.system('cp {0}-050mas-{2}_drz_sci.fits {1}-ir_drc_sci.fits'.format(key0, new_root, ref_filt))
+    os.system('cp {0}-050mas-{2}_drz_wht.fits {1}-ir_drc_wht.fits'.format(key0, new_root, ref_filt))
     
+    if key == 'cos':
+        os.system('cp {0}-100mas-ir_seg.fits {1}-ir_seg.fits'.format(key0, new_root))
+        os.system('cp {0}-100mas-ir.cat.fits {1}-ir.cat.fits'.format(key0, new_root))
+        os.system('cp {0}-mosaic_phot.fits {1}_phot.fits'.format(key0, new_root))
+    else:
+        os.system('cp {0}-ir_seg.fits {1}-ir_seg.fits'.format(root, new_root))
+        os.system('cp {0}-ir.cat.fits {1}-ir.cat.fits'.format(root, new_root))
+        os.system('cp {0}_phot.fits {1}_phot.fits'.format(root, new_root))
+        
     #kwargs['multiband_catalog_args']['detection_root'] = new_root+'-f814w'
     # kwargs['multiband_catalog_args']['field_root'] = new_root+'-f*'
     # kwargs['multiband_catalog_args']['output_root'] = new_root+'-ir'
@@ -943,7 +978,8 @@ def g800l_prep():
         
         for p in pop_files:
             if p in grism_files[g]:
-                pp  = grism_files[g].pop(grism_files[g].index(p))
+                if p in grism_files[g]:
+                    pp  = grism_files[g].pop(grism_files[g].index(p))
                 
         kwargs['grism_prep_args']['files'] = grism_files[g]
         kwargs['grism_prep_args']['refine_niter'] = 2
@@ -966,25 +1002,28 @@ def g800l_prep():
         grp.drizzle_grism_models(root=new_root, kernel='point', scale=0.15)
         del(grp)
         
-        os.system('aws s3 sync --exclude "*" --include "{0}*_grism*" ./ s3://grizli-v1/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root))
-        os.system('aws s3 sync --exclude "*" --include "*GrismFLT*" --include "*wcs.fits" ./ s3://grizli-v1/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root))
+        os.system('aws s3 sync --exclude "*" --include "{0}*_grism*" ./ s3://{1}/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root, bucket))
+        os.system('aws s3 sync --exclude "*" --include "*GrismFLT*" --include "*wcs.fits" ./ s3://{1}/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root, bucket))
 
     ########
     os.system('aws s3 sync --exclude "*" --include "{0}*ir.cat.fits*" --include "{0}*phot.fits*" ./ s3://grizli-v1/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root))
         
-    MW_EBV = {'gdn':0.011, 'gds':0.007, 'egs': 0.007, 'uds':0.019}
+    MW_EBV = {'gdn':0.011, 'gds':0.007, 'egs': 0.007, 'uds':0.019, 'cos':0.0148}
 
     pline = auto_script.DITHERED_PLINE.copy()
     pline['pixscale'] = 0.05
-        
-    auto_script.generate_fit_params(field_root=new_root, prior=None, MW_EBV=MW_EBV[key], pline=pline, fit_only_beams=True, run_fit=True, poly_order=7, fsps=True, min_sens=0.00, sys_err=0.03, fcontam=0.2, zr=[0.05, 3.4], save_file='fit_args.npy', fit_trace_shift=True, include_photometry=True, use_phot_obj=True, scale_photometry=False)
+    pline['size'] = 4
+    
+    auto_script.generate_fit_params(field_root=new_root, prior=None, MW_EBV=MW_EBV[key], pline=pline, fit_only_beams=True, run_fit=True, poly_order=7, fsps=True, min_sens=0.00, sys_err=0.03, fcontam=0.2, zr=[0.05, 3.4], save_file='fit_args.npy', fit_trace_shift=True, include_photometry=True, use_phot_obj=False, scale_photometry=False)
     args = np.load('fit_args.npy')[0]
     args['sed_args'] = {'bin': 4, 'xlim': [0.3, 2.5]}
     np.save('fit_args.npy', [args])
     
-    os.system('aws s3 sync --exclude "*" --include "{0}*ir.cat.fits*" --include "{0}*phot.fits*" --include "fit_args.npy*" ./ s3://grizli-v1/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root))
+    os.system('aws s3 sync --exclude "*" --include "{0}*ir.cat.fits*" --include "{0}*phot.fits*" --include "fit_args.npy*" ./ s3://{1}/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root, bucket))
     
-    lambda_handler.extract_beams_from_flt('egs-g800l-j141956p5255', 'grizli-v1', id, clean=False) 
+    from grizli.aws import lambda_handler
+    lambda_handler.extract_beams_from_flt(new_root, bucket, id, clean=False)
+     
     os.system('aws s3 sync --exclude "*" --include "{0}_{1:05d}*" ./ s3://grizli-v1/Pipeline/{0}/Extractions/ --acl public-read'.format(new_root, id))
     
     # New Extractions
@@ -1042,7 +1081,8 @@ def grism_prep():
         
         os.system('gzip *ir_seg.fits') # *bkg.fits')
         os.system('aws s3 sync ./ s3://grizli-v1/Mosaics/ --exclude "*" --include "*bkg.fits.gz" --include "*-ir_seg.fits.gz"')
-        
+    
+    key0 = key    
     if key == 'uds':
         field_root = root = 'uds-grism-j021732m0512'
     elif key == 'egs':
@@ -1051,32 +1091,52 @@ def grism_prep():
         field_root = root = 'gds-grism-j033236m2748'
     elif key == 'gdn':
         field_root = root = 'gdn-grism-j123656p6215'
+    elif key == 'cos':
+        field_root = root = 'cos-grism-j100012p0210'
+        key0 = 'cos-cnd'
+    
+    bucket = 'grizli-v1'
+    if key == 'cos':
+        bucket = 'grizli-cosmos-v2'
+    
+    os.system('aws s3 sync s3://{0}/Mosaics/ ./ --exclude "*" --include "{1}*"'.format(bucket, key0))
+    os.system('aws s3 sync s3://{0}/Mosaics/ ./ --exclude "*" --include "{1}*"'.format(bucket, field_root))
+    
+    os.system('cp -f {0}-100mas-ir_seg.fits.gz {1}-ir_seg.fits.gz'.format(key0, root, filt))
+    os.system('cp -f {0}-100mas-ir_drz_sci.fits.gz {1}-ir_drz_sci.fits.gz'.format(key0, root, filt))
+    os.system('cp -f {0}-100mas-ir_drz_wht.fits.gz {1}-ir_drz_wht.fits.gz'.format(key0, root, filt))
+    os.system('cp -f {0}-100mas-ir_seg.fits.gz {1}-ir_seg.fits.gz'.format(key0, root, filt))
+    os.system('cp -f {0}-mosaic_phot.fits {1}_phot.fits'.format(key0, root, filt))
+
+    os.system('cp -f {0}-100mas-ir.cat.fits {1}-ir.cat.fits'.format(key0, root, filt))
 
     # Optical copy
-    for filt in ['f606w', 'f775w', 'f814w', 'f850lp']:
-        sci_file = '{0}-050mas-{1}_drz_sci.fits.gz'.format(key, filt)
+    filts = ['f606w', 'f775w', 'f814w', 'f850lp']
+    
+    for filt in filts:
+        sci_file = '{0}-050mas-{1}_drz_sci.fits.gz'.format(key0, filt)
         if not os.path.exists(sci_file):
             continue
         
         print(sci_file)
          
         #Symlink to individual bands
-        os.system('cp -f {0}-050mas-{2}_drz_sci.fits.gz {1}-{2}_drz_sci.fits.gz'.format(key, root, filt))
-        os.system('cp -f {0}-050mas-{2}_drz_wht.fits.gz {1}-{2}_drz_wht.fits.gz'.format(key, root, filt))
+        os.system('cp -f {0}-050mas-{2}_drz_sci.fits.gz {1}-{2}_drc_sci.fits.gz'.format(key0, root, filt))
+        os.system('cp -f {0}-050mas-{2}_drz_wht.fits.gz {1}-{2}_drc_wht.fits.gz'.format(key0, root, filt))
     
     
     # IR-combined 
     num = None
     for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
-        sci_file = '{0}-100mas-{1}_drz_sci.fits.gz'.format(key, filt)
+        sci_file = '{0}-100mas-{1}_drz_sci.fits.gz'.format(key0, filt)
         if not os.path.exists(sci_file):
             continue
         
         print(sci_file)
          
         #Symlink to individual bands
-        os.system('cp -f {0}-100mas-{2}_drz_sci.fits.gz {1}-{2}_drz_sci.fits.gz'.format(key, root, filt))
-        os.system('cp -f {0}-100mas-{2}_drz_wht.fits.gz {1}-{2}_drz_wht.fits.gz'.format(key, root, filt))
+        os.system('cp -f {0}-100mas-{2}_drz_sci.fits.gz {1}-{2}_drz_sci.fits.gz'.format(key0, root, filt))
+        os.system('cp -f {0}-100mas-{2}_drz_wht.fits.gz {1}-{2}_drz_wht.fits.gz'.format(key0, root, filt))
  
         im_i = pyfits.open(sci_file)
         wht_i = pyfits.open(sci_file.replace('_sci','_wht'))
@@ -1102,6 +1162,12 @@ def grism_prep():
     pyfits.PrimaryHDU(data=wht, header=ref_h).writeto('{0}-{1}_drz_wht.fits'.format(root, 'ir'), overwrite=True, output_verify='fix')
     
     # Fill filters with combination
+    if key == 'cos':
+        im = pyfits.open('cos-grism-j100012p0210-ir_drz_sci.fits')
+        wht = pyfits.open('cos-grism-j100012p0210-ir_drz_wht.fits')[0].data
+        sci = im[0].data
+        ref_photflam = im[0].header['PHOTFLAM']
+        
     for filt in ['f140w', 'f105w', 'f125w', 'f160w']:
         sci_file = '{0}-{1}_drz_sci.fits.gz'.format(root, filt)
         if not os.path.exists(sci_file):
@@ -1128,25 +1194,35 @@ def grism_prep():
     
     all_visits, all_groups, all_info = np.load('{0}_visits.npy'.format(out_root))
     
-    bucket = 'grizli-v1'
-    base_path='Exposures'
+    # Reference WCS
+    ref_im = pyfits.open('{0}-ir_drz_sci.fits'.format(root))
+    ref_wcs =  utils.WCSFootprint(ref_im, ext=0)
     
-    for v in all_visits:
-        # Change aws path
-        v['awspath'] = []
-        for file in v['files']:
-            file_root = os.path.basename(file)
-            prog = file_root[:4]
-            dataset = file_root[:9]
+    if bucket == 'grizli-v1':
+        #bucket = 'grizli-v1'
+        base_path='Exposures'
+        for v in all_visits:
+            # Change aws path
+            v['awspath'] = []
+            for file in v['files']:
+                file_root = os.path.basename(file)
+                prog = file_root[:4]
+                dataset = file_root[:9]
             
-            aws = os.path.join(bucket, base_path, prog, dataset)
-            v['awspath'].append(aws)
+                aws = os.path.join(bucket, base_path, prog, dataset)
+                v['awspath'].append(aws)
             
     groups = all_groups#[:28]
+    products = [g['direct']['product'] for g in groups]
+    so = np.argsort(products)
     visits = []
-    for g in groups:
-        visits.append(g['direct'])
-        visits.append(g['grism'])
+    #for g in groups:
+    for i in so:
+        g = groups[i]
+        if g['grism']['footprints'][0].intersects(ref_wcs.polygon):
+            print(g['direct']['product'], g['grism']['product'])
+            visits.append(g['direct'])
+            visits.append(g['grism'])
 
     all_info['keep'] = False
     for v in visits:
@@ -1167,6 +1243,7 @@ def grism_model():
     from grizli.pipeline import auto_script
     kwargs = auto_script.get_yml_parameters()
     
+    key0 = key    
     if key == 'uds':
         field_root = root = 'uds-grism-j021732m0512'
     elif key == 'egs':
@@ -1175,7 +1252,14 @@ def grism_model():
         field_root = root = 'gds-grism-j033236m2748'
     elif key == 'gdn':
         field_root = root = 'gdn-grism-j123656p6215'
-
+    elif key == 'cos':
+        field_root = root = 'cos-grism-j100012p0210'
+        key0 = 'cos-cnd'
+    
+    bucket = 'grizli-v1'
+    if key == 'cos':
+        bucket = 'grizli-cosmos-v2'
+        
     ####### Run model
     grisms = ['g141', 'g102', 'g800l']
     
@@ -1250,8 +1334,18 @@ def grism_model():
         # Make drizzle model images
         grp.drizzle_grism_models(root=root, kernel='point', scale=0.15)
         del(grp)
-        os.system('aws s3 sync --exclude "*" --include "{0}*_grism*" ./ s3://grizli-v1/Pipeline/{0}/Extractions/ --acl public-read'.format(root))
-        os.system('aws s3 sync --exclude "*" --include "*GrismFLT*" --include "*wcs.fits" ./ s3://grizli-v1/Pipeline/{0}/Extractions/ --acl public-read'.format(root))
+        
+        # Report
+        try:
+            auto_script.make_report(root, make_rgb=False, gzipped_links=False)
+            os.system('cp -f ../Prep/*html ../Extractions/')
+        except:
+            pass
+            
+        os.chdir('../Extractions')
+        
+        os.system('aws s3 sync --exclude "*" --include "{0}*_grism*" --include "{0}*" ./ s3://{1}/Pipeline/{0}/Extractions/ --acl public-read'.format(root, bucket))
+        os.system('aws s3 sync --exclude "*" --include "*GrismFLT*" --include "*wcs.fits" ./ s3://{1}/Pipeline/{0}/Extractions/ --acl public-read'.format(root, bucket))
     
     if False:
         # Copy gds g141 files to correct directory
@@ -1296,10 +1390,14 @@ def grism_model():
     ################
       
     # Extractions
-    MW_EBV = {'gdn':0.011, 'gds':0.007, 'egs': 0.007, 'uds':0.019}
+    MW_EBV = {'gdn':0.011, 'gds':0.007, 'egs': 0.007, 'uds':0.019, 'cos': 0.0148}
     
     pline = auto_script.DITHERED_PLINE
     auto_script.generate_fit_params(field_root=root, prior=None, MW_EBV=MW_EBV[key], pline=pline, fit_only_beams=True, run_fit=True, poly_order=7, fsps=True, min_sens=0.001, sys_err=0.03, fcontam=0.2, zr=[0.05, 3.4], save_file='fit_args.npy', fit_trace_shift=False, include_photometry=True, use_phot_obj=False)
+    
+    os.system('aws s3 sync --exclude "*" --include "{0}*ir.cat.fits*" --include "{0}*phot.fits*" --include "fit_args.npy*" ./ s3://{1}/Pipeline/{0}/Extractions/ --acl public-read'.format(root, bucket))
+    
+    #####
     
     ids = [27115]
     auto_script.extract(field_root=root, maglim=[13, 24], prior=None, MW_EBV=0.019, ids=ids, pline=pline, fit_only_beams=True, run_fit=False, poly_order=7, oned_R=30, master_files=None, grp=grp, bad_pa_threshold=None, fit_trace_shift=False, size=32, diff=True, min_sens=0.01, fcontam=0.2, min_mask=0.01, sys_err=0.03, skip_complete=True, args_file='fit_args.npy', get_only_beams=False)

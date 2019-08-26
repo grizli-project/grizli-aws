@@ -590,7 +590,7 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
         sh = ref.data.shape
         the_filter = utils.get_hst_filter(ref.header)
     
-        is_fine = '50mas' in files[0]
+        is_fine = ('50mas' in files[0]) | ('30mas' in files[0])
         if is_fine:
             wh = wcs._header
         else:  

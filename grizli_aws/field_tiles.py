@@ -525,7 +525,7 @@ def make_all_tile_catalogs(key='egs', threshold=3, filts=OPTICAL_FILTERS+IR_FILT
             label = [int(i) for i in ref['NUMBER']]
             prep.table_to_regions(ref, out_root+'.reg', comment=label)
                   
-def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], sync=True, bucket='grizli-v1', use_files=None):
+def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensions = ['sci','wht'], tiles=None, sync=True, bucket='grizli-v1', use_files=None):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -568,7 +568,9 @@ def combine_tile_mosaics(key='gdn', filts=OPTICAL_FILTERS, use_ref='*', extensio
     
     # WCS defined in lower left corner
     ll = '{0:02d}.{1:02d}'.format(left, bot)
-    tiles = np.load('{0}_50mas_tile_wcs.npy'.format(key))[0]
+    if tiles is None:
+        tiles = np.load('{0}_50mas_tile_wcs.npy'.format(key))[0]
+    
     wcs = tiles[ll]
 
     ## Loop over filters

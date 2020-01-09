@@ -3,7 +3,7 @@ roots=`ls *footprint.fits | sed "s/_footprint.fits//"`
 for root in $roots; do 
     for r in flt flc; do
         for ext in RAW Prep; do 
-            echo ${root}/${ext}/${r} `ls ${root}/${ext}/*_${r}.fits | wc`
+            echo ${root}/${ext}/${r} `ls ${root}/${ext}/*_${r}.fits | wc -l`
         done
         echo ""
     done

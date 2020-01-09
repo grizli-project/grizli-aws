@@ -1,8 +1,8 @@
 #!/bin/bash
 roots=`ls *footprint.fits | sed "s/_footprint.fits//"`
 for root in $roots; do 
-    for ext in RAW Prep; do 
-        for r in flt flc; do
+    for r in flt flc; do
+        for ext in RAW Prep; do 
             echo ${root}/${ext}/${r} `ls ${root}/${ext}/*_${r}.fits | wc`
         done
         echo ""

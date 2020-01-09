@@ -1,0 +1,8 @@
+#!/bin/bash
+files=`ls -ltr */Prep/*shifts.log  | awk '{print $9}'`
+for file in $files; do 
+    ls -lt ${file}
+    grep " 1.000" ${file} | sed -e "s/^/     /"
+    echo ""
+done
+

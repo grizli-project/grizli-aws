@@ -1,0 +1,3 @@
+#!/bin/bash
+echo """grep -e " 0 " -e "radec" \`ls -ltr */Prep/*wcs.log | awk '{print $9}'\`"""
+grep -e " 0 " -e "radec" `ls -ltr */Prep/*wcs.log  | awk '{print $9}'`| sed $'s/:/:\t/'; echo "";  ls -ltr */Prep/*fail*

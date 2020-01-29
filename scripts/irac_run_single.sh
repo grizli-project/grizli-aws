@@ -50,9 +50,9 @@ fi
 #chmod ugoa+rwx /GrizliImaging
 cd /GrizliImaging
 
-fp_status=`aws s3 cp s3://${BUCKET}/Pipeline/IRAC/${root}_ipac.fits ./`
+fp_status=`aws s3 cp s3://${BUCKET}/IRAC/${root}_ipac.fits ./`
 if [ -z "${fp_status}" ]; then 
-    echo "Footprint s3://${BUCKET}/Pipeline/IRAC/${root}_ipac.fits not found"
+    echo "Footprint s3://${BUCKET}/IRAC/${root}_ipac.fits not found"
     exit
 fi
 

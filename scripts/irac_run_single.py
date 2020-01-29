@@ -19,9 +19,9 @@ def auto_run(root='j023507-040202', args=[]):
         
     master_radec = '{0}/{1}_master.radec'.format(os.getcwd(), root)
     parent_radec = '{0}/{1}_parent.radec'.format(os.getcwd(), root)
-    if not os.path.exists(master_radec):
+    if os.path.exists(master_radec):
         kwargs['radec'] = master_radec
-    elif not os.path.exists(parent_radec):
+    elif os.path.exists(parent_radec):
         kwargs['radec'] = parent_radec
         
     # Command line arguments

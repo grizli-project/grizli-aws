@@ -2,6 +2,7 @@
 ### Run all roots found in the synced directory
 ###
 
+
 #BUCKET=aws-grivam
 #BUCKET=grizli-grism
 BUCKET=grizli-v1

@@ -81,7 +81,7 @@ aws s3 rm --recursive --exclude "*" --include "*fail*" s3://${BUCKET}/Pipeline/$
 ## Run the pipeline
 irac_run_single.py $@ #${root} 
 
-if [ -e ${root}.success ]; then 
+if [ -e /tmp/${root}.success ]; then 
     echo "${root}: Success"
     echo "Finished:   `date`" > ${root}.log
     aws s3 cp ${root}.log s3://${BUCKET}/IRAC/Log/Finished/

@@ -15,7 +15,7 @@ def auto_run(root='j023507-040202', args=[]):
     
     # Run query again
     
-    kwargs = {'home':'/GrizliImaging/', 'pixfrac':0.2, 'kernel':'square', 'initial_pix':1.0, 'final_pix':0.5, 'pulldown_mag':15.2, 'sync_xbcd':True, 'skip_fetch':False, 'radec':None}
+    kwargs = {'home':'/GrizliImaging/', 'pixfrac':0.2, 'kernel':'square', 'initial_pix':1.0, 'final_pix':0.5, 'pulldown_mag':15.2, 'sync_xbcd':True, 'skip_fetch':False, 'radec':None, 'mosaic_pad':2.5, 'drizzle_ref_file':''}
         
     master_radec = '{0}/{1}_master.radec'.format(os.getcwd(), root)
     parent_radec = '{0}/{1}_parent.radec'.format(os.getcwd(), root)

@@ -177,7 +177,7 @@ def go():
         os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*cat.fits" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" --include "{0}*/Prep/*expflag*" s3://grizli-v1/Pipeline/ .'.format(root))
         
         # No catalogs 
-        os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*shifts.*" s3://grizli-v1/Pipeline/ .'.format(root))
+        os.system('aws s3 sync --exclude "*" --include "{0}*/Prep/*expflag*" --include "{0}*/Prep/*fail*" --include "{0}*/Prep/*visits.npy" --include "{0}*/Prep/*[._]wcs*" --include "{0}*/Prep/*wcs.log" --include "{0}*/Prep/*shifts.*" s3://grizli-v1/Pipeline/ .'.format(root))
         
         # ACS
         os.system('aws s3 sync --exclude "*" --include "{0}*acswfc*/Prep/*expflag*" --include "{0}*acswfc*/Prep/*fail*" --include "{0}*acswfc*/Prep/*visits.npy" --include "{0}*acswfc*/Prep/*[._]wcs*" --include "{0}*acswfc*/Prep/*shifts.*" s3://grizli-v1/Pipeline/ .'.format(root))
@@ -221,6 +221,9 @@ def go():
     all_groups = []
     all_info = []
     
+    bucket = 'grizli-v1'
+    bucket = 'grizli-cosmos-v2'
+    
     for file in visit_files:
         root_i = os.path.basename(file).split('_visits')[0]
         assoc = '_'.join(os.path.basename(file).split('_')[:2])
@@ -246,7 +249,7 @@ def go():
                 print('SKIP ', v['product'])
                 continue
             
-            v['awspath'] = ['grizli-v1/Pipeline/{0}/Prep'.format(root_i)]*len(v['files'])
+            v['awspath'] = ['{0}/Pipeline/{1}/Prep'.format(bucket, root_i)]*len(v['files'])
             all_visits.append(v)
             for f in v['files']:
                 info['keep'][info['FILE'] == f] = True
@@ -284,7 +287,7 @@ def go():
     np.save('{0}_visits.npy'.format(out_root), [all_visits, all_groups, all_info])
     
     if True:
-        os.system('aws s3 cp {0}_visits.npy s3://grizli-v1/Mosaics/ --acl public-read'.format(out_root))
+        os.system('aws s3 cp {0}_visits.npy s3://{1}/Mosaics/ --acl public-read'.format(out_root, bucket))
         
     all_visits, all_groups, all_info = np.load('{0}_visits.npy'.format(out_root))
     

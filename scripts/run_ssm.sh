@@ -3,8 +3,9 @@ aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" 
 ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 | awk '{print $1}' `
 
 ### c5 instances
-ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 |  grep c5d.x | awk '{print $1}' `
-echo `echo $ids | wc -w` "c5 instances"
+ec2_type="r5d.large" 
+ids=`aws ec2  describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicDnsName]" | sort -k 1 |  grep ${ec2_type} | awk '{print $1}' `
+echo `echo $ids | wc -w` "${ec2_type} instances"
 
 ### Drizzler
 id=i-0a8bae4cfe82dbce5
@@ -36,7 +37,8 @@ done
 
 # INit, don't kill
 #init="\"refresh_repositories > /tmp/refresh.log; aws s3 sync s3://grizli-preprocess/Scripts/ /usr/local/bin/ >> /tmp/refresh.log; chmod +x /usr/local/bin/auto_run*\","
-init="\"refresh_repositories > /tmp/refresh.log; chmod +x /usr/local/bin/auto_run*\","
+init="\"refresh_repositories > /tmp/refresh.log\",\"chmod +x /usr/local/bin/auto_run*\",\"mount_nvme > /tmp/mount.log\","
+init="\"refresh_repositories\","
 #halt=""
 halt=",\"halt_if_grizli_done\""
 
@@ -54,7 +56,14 @@ halt=",\"halt\""
 
 for id in $ids; do     
     echo $id
-    
+
+    ####### Halt
+    #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["halt"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
+
+    ####### Init only
+    # aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+
+
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters '{"commands":["auto_run_spectral_fits","halt"],"executionTimeout":["172000"]}' --timeout-seconds 600 --region us-east-1
     
     ########### Run pipeline on each sub-field
@@ -65,15 +74,28 @@ for id in $ids; do
     ########### new preprocessing for CANDELS fields
     # aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
 
+    ########### new preprocessing for COSMOS fields
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=g800l  --bucket=grizli-cosmos-v2\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    
     ########### new preprocessing for CANDELS blue filters
-    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=f435w,f275w,f336w --mosaic_args.optical_filters=f435w,f275w,f336w --visit_prep_args.max_err_percentile=95 --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --only_preprocess=True --make_mosaics=False --make_thumbnails=False --make_phot=False --is_parallel_field=False --extra_filters=f435w,f275w,f336w --mosaic_args.optical_filters=f435w,f275w,f336w --visit_prep_args.max_err_percentile=95 --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     
     ### Redo mosaics with fixed persistence and mask_spikes
     aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --run_fine_alignment=2 --bucket=grizli-v1 --run_parse_visits=False --preprocess_args.skip_single_optical_visits=True --extra_filters=g800l --redo_persistence_mask=True --mask_spikes=True --persistence_args.err_threshold=0.1 --persistence_args.reset=False --sync\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     
+    # Reset Persistence
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --run_fine_alignment=2 --bucket=grizli-v1 --run_parse_visits=False --preprocess_args.skip_single_optical_visits=True --extra_filters=g800l --redo_persistence_mask=True --mask_spikes=True --persistence_args.err_threshold=0.6 --persistence_args.reset=True --sync\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    
+    # Redo from start
+    ##  --run_fine_alignment=True --extra_filters=g800l  --bucket=grizli-v1 --is_parallel_field=False --preprocess_args.skip_single_optical_visits=True --mask_spikes=True --persistence_args.err_threshold=0.2
+    
     ## --visit_prep_args.reference_catalogs=PS1,DES,DSC,SDSS,GAIA,WISE
     ## --visit_prep_args.align_mag_limits=20,23
     ## --is_parallel_field=True --parse_visits_args.combine_same_pa=1 --parse_visits_args.max_dt=0.3 --preprocess_args.skip_single_optical_visits=True
+
+    # Parallel fields
+    ## aws s3 rm s3://grizli-v1/Pipeline/${root}/ --recursive ;
+    ## grism_run_single.sh ${root} --is_parallel_field=True --parse_visits_args.combine_same_pa=1 --parse_visits_args.max_dt=0.4 --run_fine_alignment=True --extra_filters=g800l --bucket=grizli-v1 --preprocess_args.skip_single_optical_visits=True --mask_spikes=True --persistence_args.err_threshold=0.5
     
     ### Frontier fields
     # gunzip ${root}/Prep/${root}*gz ${root}/Extractions/${root}*gz
@@ -83,6 +105,7 @@ for id in $ids; do
     
     ########### new preprocessing for CHARGE fields
     #aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --run_fine_alignment=True --extra_filters=g800l  --bucket=grizli-v1\"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
+    aws ssm send-command --document-name "AWS-RunShellScript" --instance-ids "${id}" --parameters "{\"commands\":[${init}\"auto_run_imaging --run_fine_alignment=True --extra_filters=g800l --bucket=grizli-v1 --preprocess_args.skip_single_optical_visits=True --mask_spikes=True --persistence_args.err_threshold=0.5 --visit_prep_args.single_image_CRs=False \"${halt}],\"executionTimeout\":[\"172000\"]}" --timeout-seconds 600 --region us-east-1
     
     #################################################################
     

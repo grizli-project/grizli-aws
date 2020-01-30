@@ -213,7 +213,7 @@ def regenerate_webpages(outroot='master'):
     
     print ('bash sync_to_s3.sh')
 
-def master_catalog(outroot='grizli-18.05.17-full'):
+def master_catalog(outroot='grizli-18.05.17-full', bucket='grizli-v1', files=None):
     
     import glob
     import numpy as np
@@ -222,7 +222,10 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     from astropy import table
     ## retrieve
     
-    roots = [file.split('.info')[0] for file in glob.glob('*info.fits')]
+    if files is None:
+        files = glob.glob('*info.fits')
+        
+    roots = [file.split('.info')[0] for file in files]
     
     tabs = [utils.GTable.gread(root+'.info.fits') for root in roots]
     fit = utils.GTable(table.vstack(tabs))
@@ -234,9 +237,9 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     for c in ['png_stack', 'png_full', 'png_line', 'png_rgb']:
         aws_col[c] = []
     
-    bucket='aws-grivam'
-    bucket='grizli-grism'
-    bucket='grizli'
+    #bucket='aws-grivam'
+    #bucket='grizli-grism'
+    #bucket='grizli'
       
     for i in range(N):
         root = fit['root'][i]
@@ -300,16 +303,46 @@ def master_catalog(outroot='grizli-18.05.17-full'):
                 fit[col] = np.abs(zw1 - dz_i) < 0.008
             else:
                 fit[col] |= np.abs(zw1 - dz_i) < 0.008
-
+    
+    amb = fit['ambiguous_HaOIII']*1+fit['ambiguous_HaOII']*2
+    
     ############
     # Reliable redshifts, based on 3D-HST COSMOS
     ambiguous = (fit['ambiguous_HaOIII'] | fit['ambiguous_HaOII']) & (zw2 / zw1 < 1.1)
-    fit['ok_width'] = (fit['zw1'] < 0.02) | ambiguous
+    fit['ambiguous'] = ambiguous
+    
+    # Define ambigous as wide zwidth but <= N isolated peaks with width 
+    # ambig_sigma
+    ambig_sigma = 0.005
+    ambig_npeak = 2
+    ambig_logprob = np.log10(1/np.sqrt(np.pi*ambig_sigma**2)/ambig_npeak)
+    fit.meta['pdf_max'] = ambig_logprob, 'log_pdf_max limit for ambigous lines'
+
+    fit['ambiguous'] = (zw1 > 0.2) & (fit['log_pdf_max'] > ambig_logprob)
+    
+    min_risk_lim = 0.4
+    fit['ambiguous'] &= fit['min_risk'] < min_risk_lim
+    fit.meta['min_risk'] = min_risk_lim, 'min_risk limit for ambigous lines'
+    
+        
+    fit['ok_width'] = (fit['zw1'] < 0.02) | fit['ambiguous']
     fit['ok_width'].format = 'd'
     
+    fit['bic_diff_spl'] = fit['bic_spl'] - fit['bic_temp']
+    fit['bic_diff_spl'].format = '.0f'
+    
     # Overall data quality
-    fit['use_spec'] = (fit['ok_width']) & (fit['chinu'] < 10) & (fit['bic_diff'] > 0) & (fit['flux_radius'] > 1)
-
+    fit['use_spec'] = (fit['ok_width'])
+    fit['use_spec'] &= (fit['chinu'] < 10) 
+    fit['use_spec'] &= (fit['bic_diff'] > 0) | ((fit['bic_diff'] > -30) & (fit['min_risk'] < 0.05)) 
+    fit['use_spec'] &= (fit['flux_radius'] > 1)
+    
+    dz_risk = (fit['z_map'] - fit['z_risk'])/(1+fit['z_map'])
+    fit['use_spec'] &= np.abs(dz_risk) < 0.01
+    
+    fit['dchi'] = (fit['chimax'] - fit['chimin'])/(fit['chimin']/fit['dof'])
+    fit['dchi'].format = '.1f'
+    
     # ACS GLASS
     if False:
         fit['use_spec'] &= (fit['flux_radius'] > 1.9)
@@ -318,6 +351,8 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     
     fit['z_map'].format = '.4f'
     fit['chinu'].format = '.2f'
+    
+    fit['min_risk'].format = '.2f'
     
     fit['ra'].format = '.4f'
     fit['dec'].format = '.4f'
@@ -328,41 +363,50 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     fit['zwidth1'].format = '.3f'
     fit['bic_diff'].format = '.0f'
     fit['a_image'].format = '.1f'
+    fit['log_pdf_max'].format = '.2f'
+    
     for l in ['Ha','OIII','Hb','OII','SIII']:
         fit['sn_'+l].format = '.1f'
     
-    cols = ['root', 'idx','ra', 'dec', 't_g800l', 't_g102', 't_g141', 'mag_auto', 'use_spec', 'is_point', 'z_map', 'chinu', 'bic_diff', 'zw1', 'ok_width', 'flux_radius', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 'aws_png_stack', 'aws_png_full', 'aws_png_rgb', 'aws_png_line']
+    cols = ['root', 'idx','ra', 'dec', 't_g800l', 't_g102', 't_g141', 'mag_auto', 'is_point', 'flux_radius', 'z_map', 'use_spec', 'chinu', 'bic_diff', 'min_risk', 'log_pdf_max', 'zw1', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'd4000', 'd4000_e', 'aws_png_stack', 'aws_png_full', 'aws_png_rgb', 'aws_png_line']
     
-    for g in ['g102', 'g141', 'g800l']:
-        if 't_'+g in fit.colnames:
-            bad = ~np.isfinite(fit['t_'+g])
-            fit['t_'+g][bad] = 0.
-            
-            if fit['t_'+g].max() == 0:
-                pop = True
-            else:
-                pop = False
-        else:
-            pop = True
-        
-        if pop:
-            cols.pop(cols.index('t_'+g))
+    try:
+        pred = run_classify(fit)
+        fit['pred'] = pred
+        cols.insert(10, 'pred')
+        print('Prediction!')
+    except:
+        pass
+             
+    # for g in ['g102', 'g141', 'g800l']:
+    #     if 't_'+g in fit.colnames:
+    #         bad = ~np.isfinite(fit['t_'+g])
+    #         fit['t_'+g][bad] = 0.
+    #         
+    #         if fit['t_'+g].max() == 0:
+    #             pop = True
+    #         else:
+    #             pop = False
+    #     else:
+    #         pop = True
+    #     
+    #     if pop:
+    #         cols.pop(cols.index('t_'+g))
+    
+    filter_cols = cols[2:-4]
     
     if 'sparcs' in outroot:
         cols += ['aws_png_sed']
         
-    filter_cols = ['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'flux_radius', 'zw1', 'use_spec', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 't_g800l', 't_g102', 't_g141']
+    #filter_cols = ['mag_auto', 'z_map', 'z02', 'z97', 'bic_diff', 'chinu', 'flux_radius', 'zw1', 'use_spec', 'is_point', 'sn_SIII', 'sn_Ha', 'sn_OIII', 'sn_Hb', 'sn_OII', 'log_mass', 't_g800l', 't_g102', 't_g141']
     
     if False:
         clip = (fit['bic_diff'] > 20) & (fit['chinu'] < 2) & (fit['zwidth1'] < 0.01)
     else:
-        clip = fit['mag_auto'] > 0
-        
-    fit[cols][clip].filled(fill_value=-1).write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=filter_cols, use_json=True)
-
-    print('aws s3 cp {0}.html s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
-    print('aws s3 cp {0}.json s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
-        
+        clip = fit['ra'] > 0
+    
+    print('Clip: {0}'.format((~clip).sum()))
+            
     new = utils.GTable()
     for col in fit.colnames:
         new[col] = fit[col][clip]
@@ -370,6 +414,22 @@ def master_catalog(outroot='grizli-18.05.17-full'):
     new.write(outroot+'.fits', overwrite=True)
     
     print('aws s3 cp {0}.fits s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
+    
+    #fit = fit[clip]
+    
+    # Boolean columns
+    for c in cols:
+        if c not in new.colnames:
+            continue
+        
+        if isinstance(new[c][0], np.bool_):
+            #print(c)
+            new[c] = new[c]*1
+            
+    new[cols].filled(fill_value=-1).write_sortable_html(outroot+'.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=filter_cols, use_json=True)
+
+    print('aws s3 cp {0}.html s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
+    print('aws s3 cp {0}.json s3://aws-grivam/Pipeline/ --acl public-read\n'.format(outroot))
     
     if False:
         leg = utils.read_catalog('../../Cutouts/legac_meeting.cat')  
@@ -391,10 +451,10 @@ def master_catalog(outroot='grizli-18.05.17-full'):
         
         f[lc].filled(fill_value=-1).write_sortable_html('may2019_legac.html', replace_braces=True, localhost=False, max_lines=50000, table_id=None, table_class='display compact', css=None, filter_columns=filter_cols, use_json=False)
         
-    ######################
-    # use_spec versions
-    outroot += '.use_spec'
-    clip &= (fit['use_spec'])
+    # ######################
+    # # use_spec versions
+    # outroot += '.use_spec'
+    # clip &= (fit['use_spec'])
 
 def summary_table(output_table='summary_glass-acs-2018.05.21'
 ):

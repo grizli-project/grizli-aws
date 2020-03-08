@@ -11,6 +11,10 @@ def run(root):
     if os.path.exists(run_dir):
         print('directory {0} exists'.format(run_dir))
         return True
+
+    if os.path.exists('/tmp/{0}.finished.txt'.format(root)):
+        print('/tmp/{0}.finished.txt'.format(root))
+        return True
     
     ds9 = None
 
@@ -34,7 +38,10 @@ def run(root):
 
     kwargs['patch_arcmin'] = -1
     golfir.model.run_all_patches(root, PATH='/GrizliImaging/', use_patches=True, sync_results=True, **kwargs)
-
+        
+    os.chdir('/GrizliImaging/')
+    os.system(f'rm -rf /GrizliImaging/{root}')
+    
     fp = open(f'/tmp/{root}.finished.txt','w')
     fp.write(time.ctime())
     fp.close()

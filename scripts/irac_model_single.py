@@ -6,6 +6,13 @@ import time
 
 import golfir.model
 
+root = sys.argv[1]
+
+start_file = '/GrizliImaging/{0}.start.txt'.format(root)
+if os.path.exists(start_file):
+    print('start file {0} exists'.format(start_file))
+    return True
+    
 ds9 = None
 
 kwargs = {'ds9': ds9, 
@@ -25,7 +32,6 @@ kwargs = {'ds9': ds9,
           'window': None            # PSF-match windowing
           }
           
-root = sys.argv[1]
 
 kwargs['patch_arcmin'] = -1
 golfir.model.run_all_patches(root, PATH='/GrizliImaging/', use_patches=True, sync_results=True, **kwargs)

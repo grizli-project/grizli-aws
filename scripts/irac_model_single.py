@@ -7,9 +7,9 @@ import time
 import golfir.model
 
 def run(root):
-    start_file = '/GrizliImaging/{0}.start.txt'.format(root)
-    if os.path.exists(start_file):
-        print('start file {0} exists'.format(start_file))
+    run_dir = '/GrizliImaging/{0}'.format(root)
+    if os.path.exists(run_dir):
+        print('directory {0} exists'.format(run_dir))
         return True
     
     ds9 = None

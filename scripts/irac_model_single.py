@@ -27,7 +27,7 @@ kwargs = {'ds9': ds9,
           
 root = sys.argv[1]
 
-kwargs['patch_arcmin'] = 1.0
+kwargs['patch_arcmin'] = -1
 golfir.model.run_all_patches(root, PATH='/GrizliImaging/', use_patches=True, sync_results=True, **kwargs)
 
 fp = open(f'/tmp/{root}.finished.txt','w')

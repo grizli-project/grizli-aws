@@ -15,7 +15,7 @@ def auto_run(root='j023507-040202', args=[]):
     
     # Run query again
     
-    kwargs = {'home':'/GrizliImaging/', 'pixfrac':0.2, 'kernel':'square', 'initial_pix':1.0, 'final_pix':0.5, 'pulldown_mag':15.2, 'sync_xbcd':True, 'skip_fetch':False, 'radec':None, 'mosaic_pad':2.5, 'drizzle_ref_file':''}
+    kwargs = {'home':'/GrizliImaging/', 'pixfrac':0.2, 'kernel':'square', 'initial_pix':1.0, 'final_pix':0.5, 'pulldown_mag':15.2, 'sync_xbcd':True, 'skip_fetch':False, 'radec':None, 'mosaic_pad':2.5, 'drizzle_ref_file':'','channels':['ch1','ch2','ch3','ch4','mips1']}
         
     master_radec = '{0}/{1}_master.radec'.format(os.getcwd(), root)
     parent_radec = '{0}/{1}_parent.radec'.format(os.getcwd(), root)
@@ -59,10 +59,10 @@ def auto_run(root='j023507-040202', args=[]):
                     elif isinstance(d[p], list):
                         lval = val.replace('[','').replace(']','').split(',')
                         
-                        # Item shoud be a list
-                        if (len(lval) < len(d[p])) & ('filter' not in arg):
-                            msg = 'Parameter {0} should be a list like {1}'
-                            raise(ValueError(msg.format(arg, d[p])))
+                        # # Item shoud be a list
+                        # if (len(lval) < len(d[p])) & ('filter' not in arg):
+                        #     msg = 'Parameter {0} should be a list like {1}'
+                        #     raise(ValueError(msg.format(arg, d[p])))
                         
                         try:
                             lval = list(np.cast[float](lval))

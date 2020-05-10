@@ -2,7 +2,10 @@
 
 if __name__ == "__main__":
     import importlib
-
+    import sys
+    
+    print(sys.version + '\n')
+    
     for module in ['grizli','grizli_aws', 'eazy', 'reprocess_wfc3', 'tristars', 'mastquery', 'wfc3dash', 'prospect', 'sep', 'numpy', 'scipy', 'astropy', 'astroquery', 'shapely', 'photutils', 'drizzlepac', 'wfc3tools', 'stsci.tools']:
         #print(module)
         mod = importlib.import_module(module)

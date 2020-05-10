@@ -15,8 +15,10 @@ def auto_run(root='j023507-040202', args=[]):
     
     # Run query again
     
-    kwargs = {'home':'/GrizliImaging/', 'pixfrac':0.2, 'kernel':'square', 'initial_pix':1.0, 'final_pix':0.5, 'pulldown_mag':15.2, 'sync_xbcd':True, 'skip_fetch':False, 'radec':None, 'mosaic_pad':2.5, 'drizzle_ref_file':'','channels':['ch1','ch2','ch3','ch4','mips1']}
-        
+    kwargs = {'home':'/GrizliImaging/', 'pixfrac':0.2, 'kernel':'square', 'initial_pix':1.0, 'final_pix':0.5, 'pulldown_mag':15.2, 'sync_xbcd':True, 'skip_fetch':False, 'radec':None, 'mosaic_pad':2.5, 'drizzle_ref_file':'', 'run_alignment':True, 'assume_close':True, 'aor_query':'r*', 'channels':['ch1','ch2','ch3','ch4','mips1'], 'drz_query':'r*', 'sync_results':True, 'ref_seg':None}
+    
+    # def irac_mosaics(root='j000308m3303', home='/GrizliImaging/', pixfrac=0.2, kernel='square', initial_pix=1.0, final_pix=0.5, pulldown_mag=15.2, sync_xbcd=True, skip_fetch=False, radec=None, mosaic_pad=2.5, drizzle_ref_file='', run_alignment=True, assume_close=True, bucket='grizli-v1', aor_query='r*', channels=['ch1','ch2','ch3','ch4','mips1'], drz_query='r*', sync_results=True, ref_seg=None, min_frame={'irac':10, 'mips':1.0}):
+    
     master_radec = '{0}/{1}_master.radec'.format(os.getcwd(), root)
     parent_radec = '{0}/{1}_parent.radec'.format(os.getcwd(), root)
     if os.path.exists(master_radec):

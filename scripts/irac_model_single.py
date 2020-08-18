@@ -43,7 +43,8 @@ def run(root, argv=[], ds9=None):
               'fetch': True, 
               'PATH': '/GrizliImaging/', 
               'use_patches': True, 
-              'sync_results': True}
+              'sync_results': True, 
+              'clean_PATH': True}
           
 
     defaults['patch_arcmin'] = -1
@@ -51,8 +52,9 @@ def run(root, argv=[], ds9=None):
     
     golfir.model.run_all_patches(root, **kwargs)
         
-    os.chdir('/GrizliImaging/')
-    os.system(f'rm -rf /GrizliImaging/{root}')
+    if kwargs['clean_PATH']:
+        os.chdir(kwargs['PATH'])
+        os.system(f'rm -rf ./{root}')
     
     fp = open(f'/tmp/{root}.finished.txt','w')
     fp.write(time.ctime())

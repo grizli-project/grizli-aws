@@ -3,10 +3,13 @@
 import sys
 import os
 import time
+import json
 
 import golfir.model
+import golfir.utils
 
-def run(root):
+def run(root, argv=[], ds9=None):
+    
     run_dir = '/GrizliImaging/{0}'.format(root)
     if os.path.exists(run_dir):
         print('directory {0} exists'.format(run_dir))
@@ -16,9 +19,13 @@ def run(root):
         print('/tmp/{0}.finished.txt'.format(root))
         return True
     
-    ds9 = None
-
-    kwargs = {'ds9': ds9, 
+    #ds9 = None
+    
+    if ds9 is 'connect':
+        import grizli.ds9
+        ds9 = grizli.ds9.DS9()
+        
+    defaults = {'ds9': ds9, 
               'patch_arcmin': 1.0,      # Size of patch to fit
               'patch_overlap': 0.2,     # Overlap of automatic patches
               'mag_limit': [24, 27],    # Two-pass modeling.  Fit sources brighter than mag_limit in HST catalog
@@ -32,12 +39,17 @@ def run(root):
               'channels': ['ch1', 'ch2'],  # Channels to try
               'psf_only': False,        
               'use_saved_components': False, # Use models from a "components" file if found
-              'window': None            # PSF-match windowing
-              }
+              'window': None,             # PSF-match windowing
+              'fetch': True, 
+              'PATH': '/GrizliImaging/', 
+              'use_patches': True, 
+              'sync_results': True}
           
 
-    kwargs['patch_arcmin'] = -1
-    golfir.model.run_all_patches(root, PATH='/GrizliImaging/', use_patches=True, sync_results=True, **kwargs)
+    defaults['patch_arcmin'] = -1
+    args, kwargs = golfir.utils.argv_to_dict(argv, defaults=defaults)
+    
+    golfir.model.run_all_patches(root, **kwargs)
         
     os.chdir('/GrizliImaging/')
     os.system(f'rm -rf /GrizliImaging/{root}')
@@ -50,6 +62,5 @@ def run(root):
 
 if __name__ == '__main__':
     root = sys.argv[1]
-    run(root)
-    
-
+             
+    run(root, argv=sys.argv[1:])

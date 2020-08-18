@@ -35,15 +35,21 @@ def run(root, argv=[]):
               'clean_PATH': True, 
               'skip_if_exists': True}
           
+    
+    print('xxx', defaults)
               
     defaults['patch_arcmin'] = -1
     args, kwargs = golfir.utils.argv_to_dict(argv, defaults=defaults)
+    
+    print('xxx', kwargs)
     
     run_dir = os.path.join(kwargs['PATH'], root)
     if os.path.exists(run_dir) & kwargs['skip_if_exists']:
         print('directory {0} exists'.format(run_dir))
         return True
-
+    else:
+        os.mkdir(run_dir)
+        
     if os.path.exists('/tmp/{0}.finished.txt'.format(root)):
         print('/tmp/{0}.finished.txt'.format(root))
         return True
@@ -51,11 +57,16 @@ def run(root, argv=[]):
     with open(os.path.join(run_dir, root + '.golfir.yml'), 'w') as fp:
         yaml.dump(kwargs, fp)
         
-    if kwargs['ds9'] == 'connect':
+    if isinstance(kwargs['ds9'], str):
+        if kwargs['ds9'] == 'connect':
+            target = 'DS9:*'
+        else:
+            target = kwargs['ds9']
+            
         import grizli.ds9
-        print('Use DS9!')
+        print('Use DS9: ', target)
         
-        kwargs['ds9'] = grizli.ds9.DS9()
+        kwargs['ds9'] = grizli.ds9.DS9(target=target)
     
     golfir.model.run_all_patches(root, **kwargs)
         
@@ -71,5 +82,6 @@ def run(root, argv=[]):
 
 if __name__ == '__main__':
     root = sys.argv[1]
-             
+    print('xxx run', root, sys.argv[1:])
+    
     run(root, argv=sys.argv[1:])

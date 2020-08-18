@@ -49,7 +49,7 @@ def run(root, argv=[]):
         return True
     
     with open(os.path.join(run_dir, root + '.golfir.yml'), 'w') as fp:
-        yaml.dump(kwargs)
+        yaml.dump(kwargs, fp)
         
     if kwargs['ds9'] == 'connect':
         import grizli.ds9

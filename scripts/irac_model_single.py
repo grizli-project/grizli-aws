@@ -47,7 +47,8 @@ def run(root, argv=[]):
     if os.path.exists(run_dir) & kwargs['skip_if_exists']:
         print('directory {0} exists'.format(run_dir))
         return True
-    else:
+
+    if not os.path.exists(run_dir):
         os.mkdir(run_dir)
         
     if os.path.exists('/tmp/{0}.finished.txt'.format(root)):

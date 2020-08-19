@@ -102,14 +102,17 @@ def auto_run(root='j023507-040202', args=[]):
     # 'run_fit': False          # Fit grism spectra
     # }
       
-    tab = utils.GTable.gread('{0}_footprint.fits'.format(root))
+    try:
+        tab = utils.GTable.gread('{0}_footprint.fits'.format(root))
             
-    #IS_PARALLEL = utils.column_string_operation(tab['proposal_pi'], ['Malkan', 'Trenti'], method='count', logical='or').sum() > 0
+        #IS_PARALLEL = utils.column_string_operation(tab['proposal_pi'], ['Malkan', 'Trenti'], method='count', logical='or').sum() > 0
 
-    IS_PARALLEL = (tab['target'] == 'ANY').sum() > 0
+        IS_PARALLEL = (tab['target'] == 'ANY').sum() > 0
     
-    IS_PARALLEL = bool(IS_PARALLEL)
-    
+        IS_PARALLEL = bool(IS_PARALLEL)
+    except:
+        IS_PARALLEL = False
+        
     master_radec = '{0}/{1}_master.radec'.format(os.getcwd(), root)
     if not os.path.exists(master_radec):
         master_radec = None
@@ -121,9 +124,9 @@ def auto_run(root='j023507-040202', args=[]):
     kwargs['preprocess_args']['parent_radec'] = parent_radec
     kwargs['preprocess_args']['master_radec'] = master_radec
     
-    kwargs['is_dash'] = '14114' in tab['proposal_id']
-    if kwargs['is_dash']:
-        print('\n\n!!! Process as DASH !!!!\n\n')
+    # kwargs['is_dash'] = '14114' in tab['proposal_id']
+    # if kwargs['is_dash']:
+    #     print('\n\n!!! Process as DASH !!!!\n\n')
         
     # Limited filters
     kwargs['only_preprocess'] = False

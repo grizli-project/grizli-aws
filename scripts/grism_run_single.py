@@ -179,6 +179,7 @@ def auto_run(root='j023507-040202', args=[]):
                 if pspl == 'extra_filters':
                     kwargs['filters'] += [f.upper() for f in val.split(',')]
                     kwargs['filters'] = list(np.unique(kwargs['filters']))
+                    kwargs['filters'] = [str(f) for f in kwargs['filters']]
                     print('Extra filters: {0}'.format(val.split(',')))
                     continue
 

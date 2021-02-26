@@ -183,6 +183,22 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
         
     done
     
+    # DASH files
+    dfiles=`ls *d_flt.fits`
+    for file in $dfiles; do 
+        out=`echo $file | sed "s/d_flt/q_ima/"`
+        echo $file $out
+        
+        if [ ! -e ${out} ]; then 
+            ln -s ../Prep/$file $out
+        fi
+        
+        if [ ! -e "${file}" ]; then 
+            ln -s ../Prep/${file} .
+        fi
+        
+    done
+    
     echo "Copy FLC"
     cd ../Prep/
     files=`ls *_flc.fits`

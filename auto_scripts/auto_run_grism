@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ -z "${HOME}" ]; then
+   export HOME="/home/ec2-user"
+fi
+
 source /home/ec2-user/.bashrc
 
 # Grizli run all grism+imaging, grizli-aws

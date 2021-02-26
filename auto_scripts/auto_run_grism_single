@@ -3,4 +3,4 @@
 source /home/ec2-user/.bashrc
 
 # Grizli run all grism+imaging, grizli-aws
-grism_run_single.sh $1
+grism_run_single.sh $@

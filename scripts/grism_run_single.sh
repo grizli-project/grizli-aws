@@ -171,7 +171,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     # Make fake copies of flt-raw files
     echo "Copy FLT/RAW"
     cd ${root}/Prep/
-    files=`ls *_flt.fits`
+    files=`ls *[p-z]_flt.fits`
     cd ../RAW/
     for file in $files; do 
         out=`echo $file | sed "s/_flt/_raw/"`

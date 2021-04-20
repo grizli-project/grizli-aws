@@ -72,6 +72,8 @@ clean_full_fits=0
 #BUCKET=grizli-grism
 BUCKET=grizli
 
+HOME_PATH=/GrizliImaging
+
 for arg in "$@" ; do
     if [[ $arg == "--grism" ]] ; then
         is_grism=1
@@ -85,19 +87,21 @@ for arg in "$@" ; do
         clean_full_fits=1
     elif [[ ! -z `echo "${arg}" | grep "bucket="` ]]; then 
         BUCKET=`echo "${arg}" | sed "s/=/ /" | awk '{print $2}'`
+    elif [[ ! -z `echo "${arg}" | grep "home="` ]]; then 
+        HOME_PATH=`echo "${arg}" | sed "s/=/ /" | awk '{print $2}'`
     fi
 done
 
-echo "# ${root} is_grism=${is_grism}, is_sync=${is_sync}, clean=${clean}, BUCKET=${BUCKET}"
+echo "# ${root} is_grism=${is_grism}, is_sync=${is_sync}, clean=${clean}, BUCKET=${BUCKET}, HOME_PATH=${HOME_PATH}"
 
 # Initialize working directory
 if [ $clean -gt 0 ]; then
-    rm -rf /GrizliImaging/${root}*
+    rm -rf ${HOME_PATH}/${root}*
 fi
 
 #mkdir /GrizliImaging
 #chmod ugoa+rwx /GrizliImaging
-cd /GrizliImaging
+cd ${HOME_PATH}
 
 fp_status=`aws s3 cp s3://${BUCKET}/Pipeline/Fields/${root}_footprint.fits ./`
 if [ -z "${fp_status}" ]; then 
@@ -223,7 +227,7 @@ aws s3 rm --recursive --exclude "*" --include "*fail*" s3://${BUCKET}/Pipeline/$
 # If refining the model based on the fits, remove "beams" locally 
 # and remove "full" on remote
 if [ $clean_full_fits -gt 0 ]; then
-    rm -rf /GrizliImaging/${root}/Extractions/*beams.fits
+    rm -rf ${HOME_PATH}/${root}/Extractions/*beams.fits
     aws s3 rm --recursive --exclude "*" --include "*full.fits" s3://${BUCKET}/Pipeline/${root}/Extractions/
 fi
 
@@ -232,7 +236,7 @@ grism_run_single.py $@ #${root}
 
 # Now remove local full.fits if necessary so they won't be synced
 if [ $clean_full_fits -gt 0 ]; then
-    rm -rf /GrizliImaging/${root}/Extractions/*full.fits
+    rm -rf ${HOME_PATH}/${root}/Extractions/*full.fits
 fi
 
 rm ${root}/Prep/*wcs-ref.fits
@@ -329,7 +333,7 @@ if [ -e /tmp/${root}.success ]; then
     aws s3 rm s3://${BUCKET}/Pipeline/Log/Failed/${root}.log
     
     if [ $clean -gt 0 ]; then
-        rm -rf /GrizliImaging/${root}*
+        rm -rf ${HOME_PATH}/${root}*
     fi
     
 else
@@ -341,4 +345,4 @@ fi
 
 # Done
 
-cd /GrizliImaging
+cd ${HOME_PATH}

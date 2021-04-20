@@ -172,6 +172,8 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     echo "Copy FLT/RAW"
     cd ${root}/Prep/
     files=`ls *[p-z]_flt.fits`
+    dfiles=`ls *d_flt.fits`
+    
     cd ../RAW/
     for file in $files; do 
         out=`echo $file | sed "s/_flt/_raw/"`
@@ -188,7 +190,6 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     done
     
     # DASH files
-    dfiles=`ls *d_flt.fits`
     for file in $dfiles; do 
         for ext in q_ima q_raw; do
             out=`echo $file | sed "s/d_flt/${ext}/"`

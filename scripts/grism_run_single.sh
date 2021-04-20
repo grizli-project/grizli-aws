@@ -171,7 +171,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     # Make fake copies of flt-raw files
     echo "Copy FLT/RAW"
     cd ${root}/Prep/
-    files=`ls *[p-z]_flt.fits`
+    files=`ls *_flt.fits`
     
     # Fourth read of a split DASH exposure
     dfiles=`ls *d_flt.fits`

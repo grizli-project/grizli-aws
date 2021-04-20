@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 def redo_query(root='j023507-040202', instruments=['WFC3/IR','WFC3/UVIS','ACS/WFC'], filters=[], proposal_id=[]):
     """
     Redo the MAST query based on the parent table to look for new data

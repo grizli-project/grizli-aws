@@ -190,12 +190,14 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     # DASH files
     dfiles=`ls *d_flt.fits`
     for file in $dfiles; do 
-        out=`echo $file | sed "s/d_flt/q_ima/"`
-        echo $file $out
+        for ext in q_ima q_raw; do
+            out=`echo $file | sed "s/d_flt/${ext}/"`
+            echo $file $out
         
-        if [ ! -e ${out} ]; then 
-            ln -s ../Prep/$file $out
-        fi
+            if [ ! -e ${out} ]; then 
+                ln -s ../Prep/$file $out
+            fi
+        done
         
         if [ ! -e "${file}" ]; then 
             ln -s ../Prep/${file} .

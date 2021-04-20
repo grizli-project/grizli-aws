@@ -193,10 +193,12 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     for file in $dfiles; do 
         for ext in q_ima q_raw; do
             out=`echo $file | sed "s/d_flt/${ext}/"`
-            echo $file $out
         
             if [ ! -e ${out} ]; then 
+                echo "ln -s $file $out"
                 ln -s ../Prep/$file $out
+            else 
+                echo "$file $out (exists)"                
             fi
         done
         
@@ -205,6 +207,10 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
         fi
         
     done
+    
+    echo "Duplicated files: "
+    echo "=================="
+    ls *raw.fits *ima.fits
     
     echo "Copy FLC"
     cd ../Prep/

@@ -172,6 +172,8 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     echo "Copy FLT/RAW"
     cd ${root}/Prep/
     files=`ls *[p-z]_flt.fits`
+    
+    # Fourth read of a split DASH exposure
     dfiles=`ls *d_flt.fits`
     
     cd ../RAW/
@@ -191,7 +193,7 @@ if [ $is_sync -gt 0 ] || [ $is_grism -gt 0 ]; then
     
     # DASH files
     for file in $dfiles; do 
-        for ext in q_ima q_raw; do
+        for ext in q_ima q_raw q_flt; do
             out=`echo $file | sed "s/d_flt/${ext}/"`
         
             if [ ! -e ${out} ]; then 

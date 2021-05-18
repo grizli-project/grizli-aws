@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 def redo_query(root='j023507-040202', instruments=['WFC3/IR','WFC3/UVIS','ACS/WFC'], filters=[], proposal_id=[]):
     """
     Redo the MAST query based on the parent table to look for new data
@@ -317,7 +316,7 @@ def auto_run(root='j023507-040202', args=[]):
     output_yml = '{0}.auto_script.yml'.format(root)
     auto_script.write_params_to_yml(kwargs, output_file=output_yml)
     
-    auto_script.go(root=root, HOME_PATH=os.getcwd(), **kwargs)
+    auto_script.go(root=root, **kwargs)
     
     #auto_script.go(root=root, maglim=[19, 23], HOME_PATH=HOME_PATH, inspect_ramps=False, manual_alignment=False, is_parallel_field=IS_PARALLEL, reprocess_parallel=True, only_preprocess=False, run_extractions=False, run_fit=False, s3_sync='cp', fine_radec=None, combine_all_filters=False, gaia_by_date=True, align_simple=False, align_clip=100, master_radec=master_radec, parent_radec=parent_radec, is_dash=False, run_parse_visits=True, reference_wcs_filters=['F160W','F140W','F125W','F105W','F110W','F098M','F814W','F850LP', 'F606W','F435W'])
     

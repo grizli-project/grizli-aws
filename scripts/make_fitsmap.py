@@ -197,7 +197,8 @@ def testing():
     
     # norm_kwargs = None
                            
-    !rm -rf output/j004404m2034_f160w_drz_sci
+    os.system('rm -rf output/j004404m2034_f160w_drz_sci')
+    
     convert.MPL_CMAP = 'gray_r'
     convert.dir_to_map(
         "./",

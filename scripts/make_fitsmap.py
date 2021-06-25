@@ -11,6 +11,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.ioff()
 
+def all_fields():
+    from grizli.aws import db
+    engine = db.get_db_engine()
+    ch = db.from_sql("select * from charge_fields where log like 'Finish%%' and field_ra > 0", engine)
+
+
 def make_seg(segfile, outfile='seg.png', xs=8, seed=1):
     """
     Make colorful segmentation image
@@ -31,7 +37,7 @@ def make_seg(segfile, outfile='seg.png', xs=8, seed=1):
     norm = None
                        
     rnd_seg[segim == 0] = np.nan
-    ax.imshow(rnd_seg, cmap='terrain_r', vmin=0, vmax=1)
+    ax.imshow(rnd_seg, cmap='terrain_r', vmin=0, vmax=1, origin='lower')
     
     ax.axis('off')
     fig.tight_layout(pad=0)
@@ -59,6 +65,7 @@ def run_root(root='j002532m1223', min_zoom=2):
     
     os.system(f'aws s3 sync s3://grizli-v1/Pipeline/{root}/Prep/ {root}/ --exclude "*" --include "*sci.fits.gz" --include "*phot.fits" --include "*seg.fits.gz"')
     os.system(f'aws s3 sync s3://grizli-v1/Pipeline/{root}/IRAC/ {root}/ --exclude "*" --include "*sci.fits*" --include "*model.fits"')
+    os.system(f'aws s3 sync s3://grizli-v1/Pipeline/{root}/Map/ {root}/ --exclude "*" --include "{root}.*png"')
     
     os.chdir(root)
     

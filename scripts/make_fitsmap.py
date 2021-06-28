@@ -189,7 +189,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
     if get_grism:
         from grizli.aws import db
         engine = db.get_db_engine()
-        gr = db.from_sql(f"select root, id, ra, dec, z_map from redshift_fit where field='{root}'", engine)
+        gr = db.from_sql(f"select root, id, ra, dec, z_map from redshift_fit where root='{root}'", engine)
         
         print(f'grism.cat: {len(gr)} sources')
         
@@ -205,7 +205,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
             gr['dec'].format = '.6f'
             gr['z_map'].format = '.4f'
             
-            gr['id','ra','dec','query','z_map', 'stack','full','line'].write('phot.cat', format='grism.csv', overwrite=True)
+            gr['id','ra','dec','query','z_map', 'stack','full','line'].write('grism.cat', format='grism.csv', overwrite=True)
 
             filelist += ['grism.cat']
     

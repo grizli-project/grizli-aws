@@ -79,7 +79,7 @@ def make_seg(segfile, outfile='seg.png', xs=8, seed=1):
     return fig
     
     
-def run_root(root='j002532m1223', min_zoom=2):
+def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
     """
     Prepare images for fitsmap.convert
     """        
@@ -181,18 +181,38 @@ def run_root(root='j002532m1223', min_zoom=2):
     
     ph['query'] = [eazy.utils.query_html(r, d).split(') ')[1]
                    for r, d in zip(ph['ra'], ph['dec'])]
-                   
-    ph['stack'] = [f'<img src="https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Extractions/{root}_{id:05d}.stack.png"  height="100px"/>' for id in ph['id']]
-    ph['full'] = [f'<img src="https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Extractions/{root}_{id:05d}.full.png"  height="100px"/>' for id in ph['id']]
-    ph['line'] = [f'<img src="https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Extractions/{root}_{id:05d}.line.png" height="80px"/>' for id in ph['id']]
-
-    ph['id','ra','dec','query','mag','stack','full','line'].write('phot.cat', format='ascii.csv', overwrite=True)
+    
+    ph['id','ra','dec','query','mag', 'stack','full','line'].write('phot.cat', format='ascii.csv', overwrite=True)
     
     filelist += ['phot.cat']
     
+    if get_grism:
+        from grizli.aws import db
+        engine = db.get_db_engine()
+        gr = db.from_sql(f"select root, id, ra, dec, z_map from redshift_fit where field='{root}'", engine)
+        
+        print(f'grism.cat: {len(gr)} sources')
+        
+        if len(gr) > 0:
+            gr['query'] = [eazy.utils.query_html(r, d).split(') ')[1]
+                           for r, d in zip(gr['ra'], gr['dec'])]
+                       
+            gr['stack'] = [f'<img src="https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Extractions/{root}_{id:05d}.stack.png"  height="100px"/>' for id in gr['id']]
+            gr['full'] = [f'<img src="https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Extractions/{root}_{id:05d}.full.png"  height="100px"/>' for id in gr['id']]
+            gr['line'] = [f'<img src="https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Extractions/{root}_{id:05d}.line.png" height="80px"/>' for id in gr['id']]
+            
+            gr['ra'].format = '.6f'
+            gr['dec'].format = '.6f'
+            gr['z_map'].format = '.4f'
+            
+            gr['id','ra','dec','query','z_map', 'stack','full','line'].write('phot.cat', format='grism.csv', overwrite=True)
+
+            filelist += ['grism.cat']
+    
+    
     convert.MPL_CMAP = 'gray_r'
     convert.cartographer.MARKER_HTML_WIDTH = '650px'
-    convert.cartographer.MARKER_HTML_HEIGHT = '400px'
+    convert.cartographer.MARKER_HTML_HEIGHT = '440px'
     convert.POPUP_CSS = [
         "span { text-decoration:underline; font-weight:bold; line-height:12pt; }",
         "tr { line-height: 7pt; }",

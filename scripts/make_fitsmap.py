@@ -89,13 +89,7 @@ def run_root(root='j002532m1223', min_zoom=2):
     
     from fitsmap import convert
 
-    
-    print(f"""
-    aws s3 sync s3://grizli-v1/Pipeline/{root}/Prep/ {root}/ --exclude "*" --include "*sci.fits.gz" --include "*phot.fits" --include "*seg.fits.gz"
-    
-    aws s3 sync s3://grizli-v1/Pipeline/{root}/IRAC/ {root}/ --exclude "*" --include "*sci.fits*" --include "*model.fits"
-    
-    """)
+    print('sync')
     
     os.system(f'aws s3 sync s3://grizli-v1/Pipeline/{root}/Prep/ {root}/ --exclude "*" --include "*sci.fits.gz" --include "*phot.fits" --include "*seg.fits.gz"')
     os.system(f'aws s3 sync s3://grizli-v1/Pipeline/{root}/IRAC/ {root}/ --exclude "*" --include "*sci.fits*" --include "*model.fits"')
@@ -197,7 +191,7 @@ def run_root(root='j002532m1223', min_zoom=2):
     filelist += ['phot.cat']
     
     convert.MPL_CMAP = 'gray_r'
-    convert.cartographer.MARKER_HTML_WIDTH = '600px'
+    convert.cartographer.MARKER_HTML_WIDTH = '650px'
     convert.cartographer.MARKER_HTML_HEIGHT = '400px'
     convert.POPUP_CSS = [
         "span { text-decoration:underline; font-weight:bold; line-height:12pt; }",
@@ -219,7 +213,7 @@ def run_root(root='j002532m1223', min_zoom=2):
     plt.close('all')
     
     if os.path.exists('output/index.html'):
-        os.system(f'aws s3 sync output/ s3://grizli-v1/Pipeline/{root}/Map/ --acl public-read')
+        os.system(f'aws s3 sync output/ s3://grizli-v1/Pipeline/{root}/Map/ --acl public-read --quiet')
         os.system(f'aws s3 sync ./ s3://grizli-v1/Pipeline/{root}/Map/ --exclude "*" --include "{root}.*png" --acl public-read')
         
         

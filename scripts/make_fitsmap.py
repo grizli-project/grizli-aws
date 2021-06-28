@@ -205,7 +205,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
             gr['dec'].format = '.6f'
             gr['z_map'].format = '.4f'
             
-            gr['id','ra','dec','query','z_map', 'stack','full','line'].write('grism.cat', format='grism.csv', overwrite=True)
+            gr['id','ra','dec','query','z_map', 'stack','full','line'].write('grism.cat', format='ascii.csv', overwrite=True)
 
             filelist += ['grism.cat']
     

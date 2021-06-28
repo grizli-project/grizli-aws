@@ -182,7 +182,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
     ph['query'] = [eazy.utils.query_html(r, d).split(') ')[1]
                    for r, d in zip(ph['ra'], ph['dec'])]
     
-    ph['id','ra','dec','query','mag', 'stack','full','line'].write('phot.cat', format='ascii.csv', overwrite=True)
+    ph['id','ra','dec','query','mag'].write('phot.cat', format='ascii.csv', overwrite=True)
     
     filelist += ['phot.cat']
     

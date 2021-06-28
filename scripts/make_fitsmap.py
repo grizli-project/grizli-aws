@@ -14,9 +14,43 @@ plt.ioff()
 def all_fields():
     from grizli.aws import db
     engine = db.get_db_engine()
-    ch = db.from_sql("select * from charge_fields where log like 'Finish%%' and field_ra > 0", engine)
-
-
+    ch = db.from_sql("select * from charge_fields where log like 'Finish%%' and field_ra > 0 and filters like '%%F1%%' and nfilt > 1 and field_root like 'j%%'", engine)
+    
+    so = np.argsort(ch['field_root'])
+    with open('fields.txt','w') as fp:
+        for r in ch['field_root'][so]:
+            fp.write(f'{r}\n')
+            
+    bash = """
+    roots=`cat fields.txt | shuf`
+    for root in ${roots}; do
+        if [ ! -e "${root}" ]; then
+            date > ./log/${root}.log
+            rm -rf ${root}/output/catalog_assets ${root}/output/js
+            python make_fitsmap.py ${root}
+            rm ${root}/*fits*
+        fi
+    done
+    
+    """
+    
+    import json
+    
+    js = json.load(open('CHArGE-Mar2020.json.bkup'))
+    count = 0
+    for row in js['data']:
+        root=row[0]
+        map_href = f"<a href=https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Map/index.html>{root}</a>"
+        if os.path.exists(root):
+            row[0] = map_href
+            count += 1
+            
+    with open('CHArGE-Mar2020.json','w') as fp:
+        json.dump(js, fp)
+    
+    os.system('aws s3 cp CHArGE-Mar2020.json s3://grizli-v1/Master/ --acl public-read')
+    os.system('aws s3 cp CHArGE-Mar2020.json.bkup s3://grizli-v1/Master/ --acl public-read')
+    
 def make_seg(segfile, outfile='seg.png', xs=8, seed=1):
     """
     Make colorful segmentation image
@@ -161,8 +195,17 @@ def run_root(root='j002532m1223', min_zoom=2):
     ph['id','ra','dec','query','mag','stack','full','line'].write('phot.cat', format='ascii.csv', overwrite=True)
     
     filelist += ['phot.cat']
-         
+    
     convert.MPL_CMAP = 'gray_r'
+    convert.cartographer.MARKER_HTML_WIDTH = '600px'
+    convert.cartographer.MARKER_HTML_HEIGHT = '400px'
+    convert.POPUP_CSS = [
+        "span { text-decoration:underline; font-weight:bold; line-height:12pt; }",
+        "tr { line-height: 7pt; }",
+        "table { width: 100%; }",
+        "img { height: 100px; width: auto; }",
+    ]
+    
     convert.dir_to_map(
         "./",
         filelist=filelist,

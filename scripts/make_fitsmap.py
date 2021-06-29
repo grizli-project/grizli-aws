@@ -141,7 +141,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
                 continue
             
             print(f'Reproject {ch}')
-            in_img = pyfits.open(f'{root}-{ch}_drz_sci.fits.gz')
+            in_img = pyfits.open(mos)
             in_wcs = pywcs.WCS(in_img[0].header)
             
             reproj = utils.blot_nearest_exact(in_img[0].data, 
@@ -151,7 +151,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
             pyfits.writeto(f'{root}-{ch}s_drz_sci.fits', data=reproj, 
                        header=repr_hdu.header, overwrite=True)
                     
-            ext = [ch+'s']
+            ext = [ch+]
             
             if os.path.exists(f'{root}-{ch}_model.fits'):
                 # resid

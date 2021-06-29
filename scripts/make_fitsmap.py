@@ -24,7 +24,7 @@ def all_fields():
     bash = """
     roots=`cat fields.txt | shuf`
     for root in ${roots}; do
-        if [ ! -e "${root}" ]; then
+        if [ ! -e "./log/${root}.log" ]; then
             date > ./log/${root}.log
             rm -rf ${root}/output/catalog_assets ${root}/output/js
             python make_fitsmap.py ${root}
@@ -36,19 +36,23 @@ def all_fields():
     
     import json
     
-    js = json.load(open('CHArGE-Mar2020.json.bkup'))
-    count = 0
-    for row in js['data']:
-        root=row[0]
-        map_href = f"<a href=https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Map/index.html>{root}</a>"
-        if os.path.exists(root):
-            row[0] = map_href
-            count += 1
-            
-    with open('CHArGE-Mar2020.json','w') as fp:
-        json.dump(js, fp)
+    def reproc():
+        js = json.load(open('CHArGE-Mar2020.json.bkup'))
+        count = 0
+        for row in js['data']:
+            root=row[0]
+            map_href = f"<a href=https://s3.amazonaws.com/grizli-v1/Pipeline/{root}/Map/index.html>{root}</a>"
+            if os.path.exists(f'log/{root}.log'):
+                row[0] = map_href
+                count += 1
     
-    os.system('aws s3 cp CHArGE-Mar2020.json s3://grizli-v1/Master/ --acl public-read')
+        print(f'Count: {count} / {len(js["data"])}')
+            
+        with open('CHArGE-Mar2020.json','w') as fp:
+            json.dump(js, fp)
+    
+        os.system('aws s3 cp CHArGE-Mar2020.json s3://grizli-v1/Master/ --acl public-read')
+    
     os.system('aws s3 cp CHArGE-Mar2020.json.bkup s3://grizli-v1/Master/ --acl public-read')
     
 def make_seg(segfile, outfile='seg.png', xs=8, seed=1):
@@ -121,7 +125,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
         _ = auto_script.field_rgb(root=root, xsize=6, full_dimensions=2, HOME_PATH=None, gzext='*', filters=[filt], suffix=f'.{filt}', output_format='png', invert=True, scl=2)
 
     # Spitzer
-    if glob.glob(f'{root}-ch*fits.gz'):
+    if glob.glob(f'{root}-ch*fits*'):
         import reproject
         out_img = pyfits.open(f'{root}-ir_drz_sci.fits.gz')
         repr_hdu = out_img[0]
@@ -129,7 +133,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
         #                                   verbose=False, pad=0, poly_buffer=0)
         repr_wcs = pywcs.WCS(repr_hdu.header)
         
-        mosaics = glob.glob(f'{root}-ch[12]*sci.fits.gz')
+        mosaics = glob.glob(f'{root}-ch[12]*sci.fits*')
         mosaics.sort()
         for mos in mosaics:
             ch = mos.split(f'{root}-')[1].split('_')[0]
@@ -144,10 +148,10 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
                                               in_wcs, repr_wcs, 
                                               scale_by_pixel_area=False)
                                   
-            pyfits.writeto(f'{root}-{ch}_drz_sci.fits', data=reproj, 
+            pyfits.writeto(f'{root}-{ch}s_drz_sci.fits', data=reproj, 
                        header=repr_hdu.header, overwrite=True)
                     
-            ext = [ch]
+            ext = [ch+'s']
             
             if os.path.exists(f'{root}-{ch}_model.fits'):
                 # resid

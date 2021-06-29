@@ -151,7 +151,7 @@ def run_root(root='j002532m1223', min_zoom=2, get_grism=True):
             pyfits.writeto(f'{root}-{ch}s_drz_sci.fits', data=reproj, 
                        header=repr_hdu.header, overwrite=True)
                     
-            ext = [ch+]
+            ext = [ch+'m']
             
             if os.path.exists(f'{root}-{ch}_model.fits'):
                 # resid
